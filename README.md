@@ -4,9 +4,9 @@ Projekt aplikacji w ramach przedmiotu Systemy Mobilne.
 
 ## Skład zespołu  
 
-- Kacper Bieniasz (@Redy144)
-- Krzysztof Ligarski (@kligarski)
-- Konrad Michalik (@kmichalikk)
+- Kacper Bieniasz ([gh/Redy144](https://github.com/Redy144))
+- Krzysztof Ligarski ([gh/kligarski](https://github.com/kligarski))
+- Konrad Michalik ([gh/kmichalikk](https://github.com/kmichalikk))
 
 ## Opis głównych funkcji
 
