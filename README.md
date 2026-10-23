@@ -29,7 +29,7 @@ react-native (Expo)
 
 ## Status projektu
 
-- **2026-10-16**: Dodanie README.md
+Status projektu jest dostępny [na wiki repozytorium](https://github.com/kligarski/grand-prix-companion-app/wiki/Project-status).
 
 ## Notice
 
