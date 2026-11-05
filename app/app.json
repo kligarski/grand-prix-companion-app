@@ -28,13 +28,47 @@
     "plugins": [
       "expo-router",
       [
+        "expo-font",
+        {
+          "ios": {
+            "fonts": [
+              "./assets/fonts/SairaSemiCondensed-Medium.ttf",
+              "./assets/fonts/SairaSemiCondensed-SemiBold.ttf",
+              "./assets/fonts/SairaSemiCondensed-Bold.ttf"
+            ]
+          },
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "Saira SemiCondensed",
+                "fontDefinitions": [
+                  {
+                    "path": "./assets/fonts/SairaSemiCondensed-Medium.ttf",
+                    "weight": 500
+                  },
+                  {
+                    "path": "./assets/fonts/SairaSemiCondensed-SemiBold.ttf",
+                    "weight": 600
+                  },
+                  {
+                    "path": "./assets/fonts/SairaSemiCondensed-Bold.ttf",
+                    "weight": 700
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

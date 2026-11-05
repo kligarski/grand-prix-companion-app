@@ -1,17 +1,5 @@
-import { Text, View, StyleSheet } from "react-native";
+import { PlaceholderScreen } from "@/components/PlaceholderScreen";
 
 export default function Settings() {
-  return (
-    <View style={styles.container}>
-      <Text>Settings</Text>
-    </View>
-  );
+  return <PlaceholderScreen title="Settings" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
