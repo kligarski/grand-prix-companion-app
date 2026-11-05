@@ -1,17 +1,5 @@
-import { Text, View, StyleSheet } from "react-native";
+import { PlaceholderScreen } from "@/components/PlaceholderScreen";
 
 export default function Onboarding() {
-  return (
-    <View style={styles.container}>
-      <Text>Onboarding</Text>
-    </View>
-  );
+  return <PlaceholderScreen title="Onboarding" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

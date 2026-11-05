@@ -1,17 +1,5 @@
-import { Text, View, StyleSheet } from "react-native";
+import { PlaceholderScreen } from "@/components/PlaceholderScreen";
 
 export default function Live() {
-  return (
-    <View style={styles.container}>
-      <Text>Live</Text>
-    </View>
-  );
+  return <PlaceholderScreen title="Live" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
