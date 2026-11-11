@@ -14,6 +14,7 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding" options={{ title: "Onboarding" }} />
         <Stack.Protected guard={__DEV__}>
           <Stack.Screen name="storybook" options={{ headerShown: false }} />
+          <Stack.Screen name="server-test" options={{ title: "Server test" }} />
         </Stack.Protected>
       </Stack>
     </ThemeProvider>
