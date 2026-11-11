@@ -12,6 +12,7 @@ export default function Dashboard() {
       <Button title="Settings" onPress={() => router.push("/settings")} />
       <Button title="Onboarding" onPress={() => router.push("/onboarding")} />
       {__DEV__ ? <Button title="Storybook" onPress={() => router.push("/storybook")} /> : null}
+      {__DEV__ ? <Button title="Server test" onPress={() => router.push("/server-test")} /> : null}
     </View>
   );
 }
