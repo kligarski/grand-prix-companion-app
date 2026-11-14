@@ -3,13 +3,11 @@ import { useEffect, useState } from "react";
 import { Platform, ScrollView, View } from "react-native";
 
 import type { SessionInfo } from "@/api/protocol";
-import { SERVER_URL } from "@/api/server";
+import { SERVER_URL, SESSION_ID } from "@/api/server";
 import { useLiveSession } from "@/api/useLiveSession";
 import { AppText, Card } from "@/components/ui";
 import { createThemedStyles, radii, spacing } from "@/theme";
 
-/** The only session the server replays for now. */
-const SESSION_ID = "2026-belgian-gp-race";
 const MAX_JSON_CHARS = 3000;
 
 type Endpoint = { label: string; method: "GET" | "POST"; path: string; body?: unknown };
