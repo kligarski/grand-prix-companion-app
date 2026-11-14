@@ -1,0 +1,61 @@
+diff --git a/node_modules/expo-router/build/layouts/experimental-stack/ExperimentalStackView.js b/node_modules/expo-router/build/layouts/experimental-stack/ExperimentalStackView.js
+index 675bd55..fc3d501 100644
+--- a/node_modules/expo-router/build/layouts/experimental-stack/ExperimentalStackView.js
++++ b/node_modules/expo-router/build/layouts/experimental-stack/ExperimentalStackView.js
+@@ -77,7 +77,9 @@ const SUPPORTED_OPTION_KEYS = new Set([
+     'title',
+     'headerShown',
+     'headerTransparent',
+-    'headerBackVisible'
++    'headerBackVisible',
++    'contentStyle',
++    'unstable_headerConfig'
+ ]);
+ function ExperimentalStackView({ state, emit, pop, descriptors, isPreloaded, isRemovalPrevented }) {
+     const { setNextDismissedKey } = (0, _useDismissedRouteError.useDismissedRouteError)(state, isPreloaded);
+@@ -164,7 +166,8 @@ function ScreenView({ routeKey, routeName, descriptor, options, isPreloaded, pre
+         title: options.title,
+         hidden: options.headerShown === undefined ? undefined : !options.headerShown,
+         transparent: options.headerTransparent,
+-        backButtonHidden: options.headerBackVisible === undefined ? undefined : !options.headerBackVisible
++        backButtonHidden: options.headerBackVisible === undefined ? undefined : !options.headerBackVisible,
++        ...options.unstable_headerConfig
+     };
+     return /*#__PURE__*/ (0, _jsxruntime().jsxs)(_reactnativescreens.StackV5.Screen, {
+         activityMode: isPreloaded ? 'detached' : 'attached',
+@@ -173,7 +176,10 @@ function ScreenView({ routeKey, routeName, descriptor, options, isPreloaded, pre
+         ...lifecycle,
+         children: [
+             /*#__PURE__*/ (0, _jsxruntime().jsx)(_reactnative().View, {
+-                style: styles.scene,
++                style: [
++                    styles.scene,
++                    options.contentStyle
++                ],
+                 children: descriptor.render()
+             }),
+             /*#__PURE__*/ (0, _jsxruntime().jsx)(_reactnativescreens.StackV5.HeaderConfig, {
+diff --git a/node_modules/expo-router/build/layouts/experimental-stack/types.d.ts b/node_modules/expo-router/build/layouts/experimental-stack/types.d.ts
+index b6434c7..70e9cc2 100644
+--- a/node_modules/expo-router/build/layouts/experimental-stack/types.d.ts
++++ b/node_modules/expo-router/build/layouts/experimental-stack/types.d.ts
+@@ -1,6 +1,8 @@
+ import type { NavigationAction, NavigationHelpers, NavigationProp, ParamListBase, RouteProp, StackActionHelpers, StackNavigationState } from '../../react-navigation/native';
+ import type { NativeStackViewState } from '../../react-navigation/native-stack';
+ import type { StandardNavigatorEmit } from '../../standard-navigation';
++import type { StyleProp, ViewStyle } from 'react-native';
++import type { StackHeaderConfigProps } from 'react-native-screens';
+ /**
+  * Options accepted by `ExperimentalStack` screens. Mirrors the narrow option
+  * surface of the gamma `<Stack.HeaderConfig>` component from
+@@ -14,6 +16,10 @@ export type ExperimentalStackNavigationOptions = {
+     headerShown?: boolean;
+     headerTransparent?: boolean;
+     headerBackVisible?: boolean;
++    /** Style of the view wrapping the screen content. */
++    contentStyle?: StyleProp<ViewStyle>;
++    /** Props passed as is to the react-native-screens `Stack.HeaderConfig`, e.g. header items. */
++    unstable_headerConfig?: StackHeaderConfigProps;
+ };
+ /**
+  * Navigator-level events emitted by `ExperimentalStack`. Mirrors the subset of
