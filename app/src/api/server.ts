@@ -14,6 +14,9 @@ export function websocketUrl(path: string) {
   return SERVER_URL.replace(/^http/, "ws") + path;
 }
 
+/** The only session the server replays for now. */
+export const SESSION_ID = "2026-belgian-gp-race";
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
