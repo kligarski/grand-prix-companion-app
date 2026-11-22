@@ -5,6 +5,10 @@ import { LiveSessionProvider } from "@/api/LiveSessionProvider";
 import { PreferencesProvider, usePreferences } from "@/preferences/PreferencesProvider";
 import { ThemeProvider, useTheme } from "@/theme";
 
+// A deep link opened on a cold start (e.g. `/results/10/qualifying`) lands on top of the dashboard,
+// so back returns to it instead of leaving the app.
+export const unstable_settings = { anchor: "index" };
+
 function RootStack() {
   const { colors } = useTheme();
   const { onboardingDone } = usePreferences();

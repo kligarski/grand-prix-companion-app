@@ -11,7 +11,7 @@ type Props = {
   revealLabel: string;
   /** Opens the whole championship. The "Full standings" link shows only while the rows aren't hidden. */
   onShowAll?: () => void;
-  /** What screen readers read for that link, e.g. "Full driver standings". */
+  /** What screen readers read for that link, starting with the visible text, e.g. "Full standings, drivers". */
   showAllLabel?: string;
 };
 

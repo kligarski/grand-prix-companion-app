@@ -8,7 +8,10 @@ import { Icon } from "./Icon";
 type Props = {
   label: string;
   onPress: () => void;
-  /** What screen readers read, when `label` alone is ambiguous, e.g. "Full driver standings". */
+  /**
+   * What screen readers read, when `label` alone is ambiguous. Starts with `label` so voice control
+   * matches the visible text, e.g. "Full standings, drivers".
+   */
   accessibilityLabel?: string;
 };
 

@@ -1,10 +1,9 @@
-import { useNavigation, type ExperimentalStackNavigationProp } from "expo-router";
-import { useLayoutEffect } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
 import { useLive, useSessionData } from "@/api/LiveSessionProvider";
 import type { Gap } from "@/api/protocol";
 import { DriverTable, SectionHeader, type DriverTableEntry, type TyreCompound } from "@/components/ui";
+import { useScreenHeader } from "@/hooks/useScreenHeader";
 import { usePreferences } from "@/preferences/PreferencesProvider";
 import { spacing } from "@/theme";
 
@@ -16,18 +15,13 @@ function formatInterval(gap: Gap, position: number) {
 }
 
 export default function Live() {
-  const navigation = useNavigation<ExperimentalStackNavigationProp<ReactNavigation.RootParamList>>();
   const { session } = useSessionData();
   const { live } = useLive();
   const { favouriteDriverCode } = usePreferences();
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: session?.meeting ?? "",
-      unstable_headerConfig: {
-        subtitle: live && session ? `${session.name} · Lap ${live.state.lap}/${live.state.totalLaps}` : undefined,
-      },
-    });
+  useScreenHeader({
+    title: session?.meeting ?? "",
+    subtitle: live && session ? `${session.name} · Lap ${live.state.lap}/${live.state.totalLaps}` : undefined,
   });
 
   const entries: DriverTableEntry[] = (session?.drivers ?? [])

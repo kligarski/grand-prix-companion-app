@@ -143,7 +143,7 @@ export function ResultsCard({ season, selection, onSelectionChange, favouriteCod
       {onShowAll && !hidden ? (
         <CardLink
           label="Full results"
-          accessibilityLabel={`Full ${roundName} ${SESSION_LABELS[selection.session]} results`}
+          accessibilityLabel={`Full results, ${roundName} ${SESSION_LABELS[selection.session]}`}
           onPress={onShowAll}
         />
       ) : null}

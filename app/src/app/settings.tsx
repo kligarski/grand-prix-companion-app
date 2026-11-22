@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from "@/components/PlaceholderScreen";
+import { ScreenMessage } from "@/components/ScreenMessage";
 
 export default function Settings() {
-  return <PlaceholderScreen title="Settings" />;
+  return <ScreenMessage message="Settings" />;
 }

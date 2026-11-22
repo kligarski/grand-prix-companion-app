@@ -132,14 +132,14 @@ export default function Dashboard() {
             favouriteId={favouriteDriverCode ?? undefined}
             revealLabel="Reveal driver standings"
             onShowAll={() => openStandings("drivers")}
-            showAllLabel="Full driver standings"
+            showAllLabel="Full standings, drivers"
           />
           <StandingsCard
             title="Constructor standings"
             entries={toConstructorStandingEntries(season, colors.textTertiary)}
             revealLabel="Reveal constructor standings"
             onShowAll={() => openStandings("constructors")}
-            showAllLabel="Full constructor standings"
+            showAllLabel="Full standings, constructors"
           />
         </>
       ) : null}

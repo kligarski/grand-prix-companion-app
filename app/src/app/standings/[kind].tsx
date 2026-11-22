@@ -1,12 +1,12 @@
-import { useLocalSearchParams, useNavigation, type ExperimentalStackNavigationProp } from "expo-router";
-import { useLayoutEffect } from "react";
+import { useLocalSearchParams } from "expo-router";
 
 import { useSessionData } from "@/api/LiveSessionProvider";
 import type { Season } from "@/api/protocol";
 import { FullListScreen } from "@/components/FullListScreen";
-import { ScreenMessage } from "@/components/ScreenMessage";
+import { ScreenMessage, SeasonPendingMessage } from "@/components/ScreenMessage";
 import { toConstructorStandingEntries, toDriverStandingEntries } from "@/components/standings";
 import { StandingsTable } from "@/components/ui";
+import { useScreenHeader } from "@/hooks/useScreenHeader";
 import { usePreferences } from "@/preferences/PreferencesProvider";
 import { useTheme } from "@/theme";
 
@@ -29,22 +29,19 @@ function asOfLabel(season: Season): string {
  * the card is revealed, so this screen shows the standings regardless of the Spoilers switch.
  */
 export default function FullStandings() {
-  const navigation = useNavigation<ExperimentalStackNavigationProp<ReactNavigation.RootParamList>>();
   const { kind } = useLocalSearchParams<{ kind: string }>();
-  const { season, seasonError } = useSessionData();
+  const { season } = useSessionData();
   const { favouriteDriverCode } = usePreferences();
   const { colors } = useTheme();
   const valid = isKind(kind);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: valid ? TITLES[kind] : "Standings",
-      unstable_headerConfig: { subtitle: valid && season ? asOfLabel(season) : undefined },
-    });
+  useScreenHeader({
+    title: valid ? TITLES[kind] : "Standings",
+    subtitle: valid && season ? asOfLabel(season) : undefined,
   });
 
   if (!valid) return <ScreenMessage message="Not found" />;
-  if (!season) return seasonError ? <ScreenMessage message="Can't load the standings" /> : null;
+  if (!season) return <SeasonPendingMessage errorMessage="Can't load the standings" />;
 
   const entries =
     kind === "drivers"

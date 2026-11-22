@@ -1,12 +1,12 @@
-import { useLocalSearchParams, useNavigation, type ExperimentalStackNavigationProp } from "expo-router";
-import { useLayoutEffect } from "react";
+import { useLocalSearchParams } from "expo-router";
 
 import { useSessionData } from "@/api/LiveSessionProvider";
 import { sessionForResultKey, sessionResults, SESSION_LABELS } from "@/api/season";
 import { FullListScreen } from "@/components/FullListScreen";
 import { toResultTableEntries } from "@/components/results";
-import { ScreenMessage } from "@/components/ScreenMessage";
+import { ScreenMessage, SeasonPendingMessage } from "@/components/ScreenMessage";
 import { DriverTable } from "@/components/ui";
+import { useScreenHeader } from "@/hooks/useScreenHeader";
 import { usePreferences } from "@/preferences/PreferencesProvider";
 import { useTheme } from "@/theme";
 
@@ -16,9 +16,8 @@ import { useTheme } from "@/theme";
  * shows once the card is revealed, so this screen shows the results regardless of the Spoilers switch.
  */
 export default function FullResults() {
-  const navigation = useNavigation<ExperimentalStackNavigationProp<ReactNavigation.RootParamList>>();
   const params = useLocalSearchParams<{ round: string; session: string }>();
-  const { season, seasonError } = useSessionData();
+  const { season } = useSessionData();
   const { favouriteDriverCode } = usePreferences();
   const { colors } = useTheme();
 
@@ -27,14 +26,12 @@ export default function FullResults() {
   const round = season?.schedule.find((entry) => entry.round === roundNumber);
   const results = season && round && session ? sessionResults(season, { round: round.round, session }) : null;
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: round?.name ?? "Results",
-      unstable_headerConfig: { subtitle: round && session ? SESSION_LABELS[session] : undefined },
-    });
+  useScreenHeader({
+    title: round?.name ?? "Results",
+    subtitle: round && session ? SESSION_LABELS[session] : undefined,
   });
 
-  if (!season) return seasonError ? <ScreenMessage message="Can't load the results" /> : null;
+  if (!season) return <SeasonPendingMessage errorMessage="Can't load the results" />;
   if (!results) return <ScreenMessage message="No results for this session" />;
 
   return (

@@ -31,6 +31,6 @@ export const FullResults: Story = {};
 export const FullStandings: Story = {
   args: {
     label: "Full standings",
-    accessibilityLabel: "Full driver standings",
+    accessibilityLabel: "Full standings, drivers",
   },
 };
