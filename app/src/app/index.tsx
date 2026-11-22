@@ -5,13 +5,21 @@ import { fillMaxWidth } from "@expo/ui/jetpack-compose/modifiers";
 import { Button as SwiftUIButton, Text as SwiftUIText } from "@expo/ui/swift-ui";
 import { buttonStyle, controlSize, frame, tint } from "@expo/ui/swift-ui/modifiers";
 import { router, useNavigation, type ExperimentalStackNavigationProp } from "expo-router";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect } from "react";
 import { Button, Platform, ScrollView, StyleSheet, View } from "react-native";
 
 import { useLive, useSessionData } from "@/api/LiveSessionProvider";
-import type { TrackStatus } from "@/api/protocol";
-import { nextRound } from "@/api/season";
-import { AppText, Card, LiveBadge } from "@/components/ui";
+import type { Round, SeasonSession, SessionStatus, TrackStatus } from "@/api/protocol";
+import {
+  formatSessionTime,
+  nextRound,
+  SESSION_LABELS,
+  toConstructorStandingEntries,
+  toDriverStandingEntries,
+} from "@/api/season";
+import { StandingsCard } from "@/components/StandingsCard";
+import { AppText, Card, LiveBadge, SectionHeader, WeekendSchedule, type WeekendSession } from "@/components/ui";
+import { usePreferences } from "@/preferences/PreferencesProvider";
 import { palette, spacing, useTheme } from "@/theme";
 
 const TRACK_STATUS: Record<TrackStatus, string | null> = {
@@ -23,6 +31,15 @@ const TRACK_STATUS: Record<TrackStatus, string | null> = {
   red: "Red flag",
 };
 
+/** The session the server replays. Earlier sessions of the weekend are over. */
+const LIVE_SESSION_TYPE: SeasonSession["type"] = "Race";
+
+function liveSessionStatus(status: SessionStatus | undefined): WeekendSession["status"] {
+  if (status === "started") return "live";
+  if (status === "finished" || status === "finalised") return "finished";
+  return undefined;
+}
+
 /**
  * The live session card, or "Can't reach the server" when a fetch or the socket failed. A separate
  * component so only it re-renders on every live update, not the whole dashboard.
@@ -31,6 +48,7 @@ function LiveCard() {
   const { scheme } = useTheme();
   const { session, sessionError, seasonError, loading, reload } = useSessionData();
   const { status, live, reconnect } = useLive();
+  const { showSpoilers } = usePreferences();
   const fetchFailed = sessionError !== null || seasonError !== null;
   const socketFailed = status === "closed" || status === "error";
 
@@ -58,8 +76,13 @@ function LiveCard() {
 
   if (!session) return null;
 
+  // The track status gives away incidents, so it's a spoiler; the lap isn't.
   const liveSummary = live
-    ? [session.name, `Lap ${live.state.lap} of ${live.state.totalLaps}`, TRACK_STATUS[live.state.trackStatus]]
+    ? [
+        session.name,
+        `Lap ${live.state.lap} of ${live.state.totalLaps}`,
+        showSpoilers ? TRACK_STATUS[live.state.trackStatus] : null,
+      ]
         .filter(Boolean)
         .join(" · ")
     : null;
@@ -97,10 +120,39 @@ function LiveCard() {
   );
 }
 
+/**
+ * This weekend's sessions in the device's time zone. Sessions before the replayed one are finished;
+ * the replayed one follows the live socket. A separate component, like `LiveCard`, because it reads
+ * the live state.
+ */
+function WeekendCard({ round }: { round: Round }) {
+  const { live } = useLive();
+  const liveStatus = liveSessionStatus(live?.state.sessionStatus);
+  const liveIndex = round.sessions.findIndex((session) => session.type === LIVE_SESSION_TYPE);
+
+  const sessions = round.sessions.map(
+    (session, index): WeekendSession => ({
+      key: session.type,
+      title: SESSION_LABELS[session.type],
+      subtitle: formatSessionTime(session.startUtc),
+      status: index < liveIndex ? "finished" : index === liveIndex ? liveStatus : undefined,
+    }),
+  );
+
+  return (
+    <View style={styles.section}>
+      <SectionHeader title="This weekend" accessory="Times in your time zone" />
+      <Card>
+        <WeekendSchedule sessions={sessions} />
+      </Card>
+    </View>
+  );
+}
+
 export default function Dashboard() {
   const { scheme, colors } = useTheme();
   const navigation = useNavigation<ExperimentalStackNavigationProp<ReactNavigation.RootParamList>>();
-  const [spoilers, setSpoilers] = useState(true);
+  const { showSpoilers, setShowSpoilers, favouriteDriverCode } = usePreferences();
   const { season } = useSessionData();
   const round = season ? nextRound(season) : null;
 
@@ -109,7 +161,7 @@ export default function Dashboard() {
   const SpoilersSwitch = (
     <View style={styles.spoilers}>
       <Host matchContents colorScheme={scheme}>
-        <Switch label="Spoilers" value={spoilers} onValueChange={setSpoilers} />
+        <Switch label="Spoilers" value={showSpoilers} onValueChange={setShowSpoilers} />
       </Host>
     </View>
   );
@@ -160,6 +212,22 @@ export default function Dashboard() {
         ) : null}
       </View>
       <LiveCard />
+      {round ? <WeekendCard round={round} /> : null}
+      {season ? (
+        <>
+          <StandingsCard
+            title="Driver standings"
+            entries={toDriverStandingEntries(season, colors.textTertiary)}
+            favouriteId={favouriteDriverCode ?? undefined}
+            revealLabel="Reveal driver standings"
+          />
+          <StandingsCard
+            title="Constructor standings"
+            entries={toConstructorStandingEntries(season, colors.textTertiary)}
+            revealLabel="Reveal constructor standings"
+          />
+        </>
+      ) : null}
       {__DEV__ ? <Button title="Storybook" onPress={() => router.push("/storybook")} /> : null}
       {__DEV__ ? <Button title="Server test" onPress={() => router.push("/server-test")} /> : null}
     </ScrollView>
@@ -173,5 +241,8 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     gap: spacing.lg,
+  },
+  section: {
+    gap: spacing.sm,
   },
 });
