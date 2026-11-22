@@ -1,59 +1,15 @@
-import { Button as UIButton, Host } from "@expo/ui";
+import { Host } from "@expo/ui";
 import { Button as ComposeButton, Text as ComposeText, TextButton } from "@expo/ui/jetpack-compose";
 import { Button as SwiftUIButton, Text as SwiftUIText } from "@expo/ui/swift-ui";
 import { buttonStyle, controlSize, disabled, frame, tint } from "@expo/ui/swift-ui/modifiers";
 import { useState } from "react";
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { driverPickerItems } from "@/api/drivers";
-import { useSessionData } from "@/api/LiveSessionProvider";
-import { AppText, DriverPickerGrid } from "@/components/ui";
+import { DriverPicker } from "@/components/DriverPicker";
+import { AppText } from "@/components/ui";
 import { usePreferences } from "@/preferences/PreferencesProvider";
 import { createThemedStyles, palette, spacing, useTheme } from "@/theme";
-
-type DriversProps = {
-  selectedCode: string | null;
-  onSelect: (code: string) => void;
-};
-
-/** The driver grid, or a spinner while the session loads, or an error with Retry. */
-function Drivers({ selectedCode, onSelect }: DriversProps) {
-  const { scheme, colors } = useTheme();
-  const { session, season, sessionError, loading, reload } = useSessionData();
-
-  if (!session && sessionError && !loading) {
-    return (
-      <View style={styles.status}>
-        <AppText variant="callout" color="textSecondary">
-          {"Can't load the drivers. Check your connection and try again."}
-        </AppText>
-        <Host matchContents colorScheme={scheme}>
-          <UIButton label="Retry" variant="outlined" onPress={reload} />
-        </Host>
-      </View>
-    );
-  }
-
-  if (!session) {
-    return (
-      <View style={styles.status}>
-        <ActivityIndicator color={colors.textSecondary} accessibilityLabel="Loading drivers" />
-      </View>
-    );
-  }
-
-  return (
-    <>
-      {season ? (
-        <AppText variant="footnote" color="textSecondary">
-          In championship order
-        </AppText>
-      ) : null}
-      <DriverPickerGrid drivers={driverPickerItems(session, season)} selectedCode={selectedCode} onSelect={onSelect} />
-    </>
-  );
-}
 
 type FooterProps = {
   selectedCode: string | null;
@@ -131,7 +87,7 @@ export default function Onboarding() {
             {"We'll keep them highlighted in results, standings and live timing."}
           </AppText>
         </View>
-        <Drivers selectedCode={selectedCode} onSelect={setSelectedCode} />
+        <DriverPicker selectedCode={selectedCode} onSelect={setSelectedCode} />
       </ScrollView>
       <Footer
         selectedCode={selectedCode}
@@ -154,15 +110,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  status: {
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.xxxl,
-  },
   footerIos: {
     gap: spacing.xs,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
+    paddingBottom: spacing.md,
   },
   footerAndroid: {
     flexDirection: "row",

@@ -1,4 +1,4 @@
-import { createContext, use, useState, type ReactNode } from "react";
+import { createContext, use, useRef, useState, type ReactNode } from "react";
 
 import type { ThemePreference } from "@/theme";
 
@@ -19,15 +19,19 @@ const PreferencesContext = createContext<PreferencesContextValue | null>(null);
 /** Persisted user preferences. Read synchronously on mount, so the first screen is already the right one. */
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState(readPreferences);
+  // The latest value, including changes not rendered yet, so two setters in one event both stick.
+  const latest = useRef(preferences);
 
   const update = (changes: Partial<Preferences>) => {
-    const next = { ...preferences, ...changes };
+    const next = { ...latest.current, ...changes };
+    latest.current = next;
     writePreferences(next);
     setPreferences(next);
   };
 
   const reset = () => {
     clearPreferences();
+    latest.current = DEFAULT_PREFERENCES;
     setPreferences(DEFAULT_PREFERENCES);
   };
 

@@ -40,7 +40,7 @@ function DriverTile({ driver, selected, onSelect }: TileProps) {
   return (
     <Pressable
       accessibilityRole="radio"
-      accessibilityState={{ selected, checked: selected }}
+      accessibilityState={{ checked: selected }}
       accessibilityLabel={`${driver.code}, ${driver.name}, ${driver.team}`}
       onPress={() => onSelect(driver.code)}
       style={({ pressed }) => [styles.tile, selected && styles.tileSelected, pressed && styles.pressed]}
