@@ -43,17 +43,21 @@ export const Upcoming: Story = {
   },
 };
 
+// The trailing element goes in through `render`, not `args`: Storybook walks every arg to infer its
+// type, and walking a React element reaches values whose getters throw outside a navigator, which
+// stops the whole Storybook from loading.
 export const WithTrailing: Story = {
   args: {
     sessions: [
-      {
-        key: "Qualifying",
-        title: "Qualifying",
-        subtitle: "Sat 15:00",
-        status: "finished",
-        trailing: <AppText color="link">Results</AppText>,
-      },
+      { key: "Qualifying", title: "Qualifying", subtitle: "Sat 15:00", status: "finished" },
       { key: "Race", title: "Race", subtitle: "Sun 15:00", status: "finished" },
     ],
   },
+  render: ({ sessions }) => (
+    <WeekendSchedule
+      sessions={sessions.map((session, index) =>
+        index === 0 ? { ...session, trailing: <AppText color="link">Results</AppText> } : session,
+      )}
+    />
+  ),
 };
