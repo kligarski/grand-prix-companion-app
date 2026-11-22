@@ -51,17 +51,20 @@ export function LiveTimingSheet({ entries, favouriteCode }: Props) {
       surface={<View style={styles.surface} />}
       surfaceStyle={styles.surfaceShape}
     >
+      {/* The grabber and the header are one toggle, so the tap target spans the sheet's top edge. */}
       <Pressable
         onPress={() => changeIndex(expanded ? COLLAPSED : EXPANDED)}
         accessibilityRole="button"
-        accessibilityLabel={expanded ? "Collapse timing" : "Expand timing"}
-        style={styles.grabberArea}
+        accessibilityLabel="Timing"
+        accessibilityHint={expanded ? "Collapses the timing list" : "Expands the timing list"}
+        accessibilityState={{ expanded }}
+        style={styles.toggle}
       >
-        <View style={styles.grabber} />
-      </Pressable>
-      <View style={styles.header}>
+        <View style={styles.grabberArea}>
+          <View style={styles.grabber} />
+        </View>
         <SectionHeader title="Timing" subtitle="Interval to car ahead" />
-      </View>
+      </Pressable>
       <ScrollView ref={listRef} style={styles.list} contentContainerStyle={styles.listContent}>
         <SafeAreaView edges={BOTTOM_EDGES}>
           <DriverTable entries={entries} favouriteCode={favouriteCode} />
@@ -80,8 +83,15 @@ const useStyles = createThemedStyles(({ colors }) => ({
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
     borderCurve: "continuous",
+    // `boxShadow` only, on both platforms: the library draws it on iOS and on Android API 28+, where
+    // it casts upwards like the iOS shadow. An Android `elevation` shadow falls mostly below the card,
+    // so it barely shows above the sheet, and adding it on top of `boxShadow` drew two shadows.
+    // Android below API 28 gets no shadow; the sheet's colour still sets it apart from the screen.
     boxShadow: `0 -4px 16px ${colors.sheetShadow}`,
-    elevation: 16,
+  },
+  toggle: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
   },
   grabberArea: {
     alignItems: "center",
@@ -93,10 +103,6 @@ const useStyles = createThemedStyles(({ colors }) => ({
     height: GRABBER.height,
     borderRadius: radii.pill,
     backgroundColor: colors.border,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
   },
   list: {
     flex: 1,
