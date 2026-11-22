@@ -1,4 +1,4 @@
-import { AppText, Card, StandingsTable, type StandingsTableEntry } from "@/components/ui";
+import { AppText, Card, CardLink, StandingsTable, type StandingsTableEntry } from "@/components/ui";
 import { useTheme } from "@/theme";
 
 import { SpoilerBlur, useSpoilerReveal } from "./SpoilerBlur";
@@ -9,10 +9,14 @@ type Props = {
   favouriteId?: string;
   /** What screen readers read for the blurred rows, e.g. "Reveal driver standings". */
   revealLabel: string;
+  /** Opens the whole championship. The "Full standings" link shows only while the rows aren't hidden. */
+  onShowAll?: () => void;
+  /** What screen readers read for that link, e.g. "Full driver standings". */
+  showAllLabel?: string;
 };
 
 /** The top 3 of a championship, plus the favourite. Blurred when spoilers are off; the title stays sharp. */
-export function StandingsCard({ title, entries, favouriteId, revealLabel }: Props) {
+export function StandingsCard({ title, entries, favouriteId, revealLabel, onShowAll, showAllLabel }: Props) {
   const { colors } = useTheme();
   const { hidden, reveal } = useSpoilerReveal();
 
@@ -37,6 +41,9 @@ export function StandingsCard({ title, entries, favouriteId, revealLabel }: Prop
           limit={3}
         />
       </SpoilerBlur>
+      {onShowAll && !hidden ? (
+        <CardLink label="Full standings" accessibilityLabel={showAllLabel} onPress={onShowAll} />
+      ) : null}
     </Card>
   );
 }

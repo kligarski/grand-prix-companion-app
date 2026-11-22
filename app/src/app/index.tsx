@@ -7,7 +7,7 @@ import { Button, ScrollView, StyleSheet, View } from "react-native";
 
 import { useSessionData } from "@/api/LiveSessionProvider";
 import type { SeasonSession } from "@/api/protocol";
-import { nextRound, resolveSelection, type SessionSelection } from "@/api/season";
+import { nextRound, resolveSelection, RESULT_KEYS, type SessionSelection } from "@/api/season";
 import { LiveCard } from "@/components/LiveCard";
 import { ResultsCard } from "@/components/ResultsCard";
 import { toConstructorStandingEntries, toDriverStandingEntries } from "@/components/standings";
@@ -43,6 +43,13 @@ export default function Dashboard() {
   };
 
   const openSettings = () => router.push("/settings");
+  const openStandings = (kind: "drivers" | "constructors") =>
+    router.push({ pathname: "/standings/[kind]", params: { kind } });
+  const openResults = ({ round, session }: SessionSelection) =>
+    router.push({
+      pathname: "/results/[round]/[session]",
+      params: { round: String(round), session: RESULT_KEYS[session] },
+    });
 
   const SpoilersSwitch = (
     <View style={styles.spoilers}>
@@ -115,6 +122,7 @@ export default function Dashboard() {
                 selection={resultsSelection}
                 onSelectionChange={setSelection}
                 favouriteCode={favouriteDriverCode ?? undefined}
+                onShowAll={() => openResults(resultsSelection)}
               />
             </View>
           ) : null}
@@ -123,11 +131,15 @@ export default function Dashboard() {
             entries={toDriverStandingEntries(season, colors.textTertiary)}
             favouriteId={favouriteDriverCode ?? undefined}
             revealLabel="Reveal driver standings"
+            onShowAll={() => openStandings("drivers")}
+            showAllLabel="Full driver standings"
           />
           <StandingsCard
             title="Constructor standings"
             entries={toConstructorStandingEntries(season, colors.textTertiary)}
             revealLabel="Reveal constructor standings"
+            onShowAll={() => openStandings("constructors")}
+            showAllLabel="Full constructor standings"
           />
         </>
       ) : null}

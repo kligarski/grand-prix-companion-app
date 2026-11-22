@@ -22,6 +22,8 @@ function RootStack() {
         <Stack.Screen name="index" options={{ title: "", headerShown }} />
         <Stack.Screen name="live" options={{ title: "", headerShown }} />
         <Stack.Screen name="settings" options={{ title: "Settings", headerShown }} />
+        <Stack.Screen name="standings/[kind]" options={{ title: "", headerShown }} />
+        <Stack.Screen name="results/[round]/[session]" options={{ title: "", headerShown }} />
       </Stack.Protected>
       <Stack.Protected guard={!onboardingDone} redirectTo="/">
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
