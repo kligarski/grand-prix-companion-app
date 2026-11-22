@@ -1,4 +1,4 @@
-import type { DriverTableEntry, StandingsTableEntry } from "@/components/ui";
+import type { DriverPickerItem, DriverTableEntry, StandingsTableEntry } from "@/components/ui";
 import { teamColors } from "@/theme";
 
 export const FAVOURITE_CODE = "KOV";
@@ -42,4 +42,17 @@ export const constructorStandings: StandingsTableEntry[] = [
   { id: "borealis", position: 2, title: "Team Borealis", teamColor: teamColors.borealis, points: 389 },
   { id: "cobalt", position: 3, title: "Team Cobalt", teamColor: teamColors.cobalt, points: 344 },
   { id: "dune", position: 4, title: "Team Dune", teamColor: teamColors.dune, points: 201 },
+];
+
+export const pickerDrivers: DriverPickerItem[] = [
+  { code: "VRN", name: "A. Varen", team: "Aster", teamColor: teamColors.aster },
+  { code: "OKO", name: "M. Okoro", team: "Borealis", teamColor: teamColors.borealis },
+  { code: "LIN", name: "J. Lindqvist", team: "Cobalt", teamColor: teamColors.cobalt },
+  { code: "SAT", name: "K. Sato", team: "Borealis", teamColor: teamColors.borealis },
+  { code: "MRE", name: "D. Moreau", team: "Dune", teamColor: teamColors.dune },
+  { code: "HAL", name: "T. Hale", team: "Cobalt", teamColor: teamColors.cobalt },
+  { code: "RUI", name: "P. Ruiz", team: "Ember", teamColor: teamColors.ember },
+  { code: "BEK", name: "L. Becker", team: "Dune", teamColor: teamColors.dune },
+  { code: "KOV", name: "E. Kovač", team: "Fjord", teamColor: teamColors.fjord },
+  { code: "NAS", name: "R. Nasser", team: "Ember", teamColor: teamColors.ember },
 ];

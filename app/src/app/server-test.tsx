@@ -1,4 +1,5 @@
 import { Button, Host } from "@expo/ui";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform, ScrollView, View } from "react-native";
 
@@ -6,6 +7,7 @@ import type { SessionInfo } from "@/api/protocol";
 import { SERVER_URL, SESSION_ID } from "@/api/server";
 import { useLiveSession } from "@/api/useLiveSession";
 import { AppText, Card } from "@/components/ui";
+import { usePreferences } from "@/preferences/PreferencesProvider";
 import { createThemedStyles, radii, spacing, useTheme } from "@/theme";
 
 const MAX_JSON_CHARS = 3000;
@@ -69,11 +71,18 @@ export default function ServerTest() {
   const styles = useStyles();
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [response, setResponse] = useState<Response | null>(null);
+  const { reset } = usePreferences();
   // A separate socket from the app's LiveSessionProvider, opened only on "Connect", so this protocol
   // debugger's setDelay and syncTap don't change the app's timeline.
   const { status, live, lastMessage, connect, disconnect, send } = useLiveSession(SESSION_ID);
 
   const run = async (endpoint: Endpoint) => setResponse(await request(endpoint));
+
+  // Back to the dashboard, which is now guarded and redirects to onboarding.
+  const resetPreferences = () => {
+    reset();
+    router.dismissAll();
+  };
 
   useEffect(() => {
     request(ENDPOINTS[1]).then((result) => {
@@ -161,6 +170,18 @@ export default function ServerTest() {
             </AppText>
           </>
         ) : null}
+      </Card>
+
+      <Card>
+        <AppText variant="overline" color="textSecondary">
+          Preferences
+        </AppText>
+        <AppText variant="footnote" color="textSecondary">
+          Clears the favourite driver and settings, and brings back onboarding.
+        </AppText>
+        <View style={styles.buttons}>
+          <NativeButton label="Reset preferences" onPress={resetPreferences} />
+        </View>
       </Card>
     </ScrollView>
   );

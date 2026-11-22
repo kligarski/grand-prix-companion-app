@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet } from "react-native";
 import { useLive, useSessionData } from "@/api/LiveSessionProvider";
 import type { Gap } from "@/api/protocol";
 import { DriverTable, SectionHeader, type DriverTableEntry, type TyreCompound } from "@/components/ui";
+import { usePreferences } from "@/preferences/PreferencesProvider";
 import { spacing } from "@/theme";
 
 function formatInterval(gap: Gap, position: number) {
@@ -18,6 +19,7 @@ export default function Live() {
   const navigation = useNavigation<ExperimentalStackNavigationProp<ReactNavigation.RootParamList>>();
   const { session } = useSessionData();
   const { live } = useLive();
+  const { favouriteDriverCode } = usePreferences();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -46,7 +48,7 @@ export default function Live() {
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
       <SectionHeader title="Timing" subtitle="Interval to car ahead" />
-      <DriverTable entries={entries} />
+      <DriverTable entries={entries} favouriteCode={favouriteDriverCode ?? undefined} />
     </ScrollView>
   );
 }

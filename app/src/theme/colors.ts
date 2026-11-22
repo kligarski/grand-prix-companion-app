@@ -46,6 +46,8 @@ export type ColorTokens = {
   surface: string;
   /** Rows and tiles placed on a surface */
   surfaceElevated: string;
+  /** Tiles placed straight on the screen background (driver picker) */
+  tile: string;
   /** Bottom sheets and modals */
   sheet: string;
   /** Inputs, pill buttons, segmented control track */
@@ -76,6 +78,7 @@ export const darkColors: ColorTokens = {
   background: "#000000",
   surface: "#0F1015",
   surfaceElevated: "#1A1D26",
+  tile: "#1A1D26",
   sheet: "#15161B",
   fill: "#1D1D1F",
   fillSelected: "#57585D",
@@ -100,6 +103,7 @@ export const lightColors: ColorTokens = {
   background: "#F3F2F7",
   surface: "#FFFFFF",
   surfaceElevated: "#EEEDF2",
+  tile: "#FFFFFF",
   sheet: "#FFFFFF",
   fill: "#E6E6EB",
   fillSelected: "#FFFFFF",

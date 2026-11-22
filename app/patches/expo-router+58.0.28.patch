@@ -1,8 +1,8 @@
 diff --git a/node_modules/expo-router/build/layouts/experimental-stack/ExperimentalStackView.js b/node_modules/expo-router/build/layouts/experimental-stack/ExperimentalStackView.js
-index 675bd55..fc3d501 100644
+index 675bd55..b6b1cfc 100644
 --- a/node_modules/expo-router/build/layouts/experimental-stack/ExperimentalStackView.js
 +++ b/node_modules/expo-router/build/layouts/experimental-stack/ExperimentalStackView.js
-@@ -77,7 +77,9 @@ const SUPPORTED_OPTION_KEYS = new Set([
+@@ -77,20 +77,27 @@ const SUPPORTED_OPTION_KEYS = new Set([
      'title',
      'headerShown',
      'headerTransparent',
@@ -11,9 +11,38 @@ index 675bd55..fc3d501 100644
 +    'contentStyle',
 +    'unstable_headerConfig'
  ]);
++// The bottom screen keeps one native key, so replacing it (e.g. a Stack.Protected redirect) swaps
++// its content in place. A new key would pop the last native screen, which react-native-screens
++// asserts against ("Attempt to pop last screen from the stack").
++const ROOT_SCREEN_KEY = 'expo-router-experimental-stack-root';
  function ExperimentalStackView({ state, emit, pop, descriptors, isPreloaded, isRemovalPrevented }) {
      const { setNextDismissedKey } = (0, _useDismissedRouteError.useDismissedRouteError)(state, isPreloaded);
-@@ -164,7 +166,8 @@ function ScreenView({ routeKey, routeName, descriptor, options, isPreloaded, pre
+     return /*#__PURE__*/ (0, _jsxruntime().jsx)(_reactnative().View, {
+         style: styles.container,
+         children: /*#__PURE__*/ (0, _jsxruntime().jsx)(_reactnativescreens.StackV5.Host, {
+-            children: state.routes.map((route)=>{
++            children: state.routes.map((route, index)=>{
++                const screenKey = index === 0 ? ROOT_SCREEN_KEY : route.key;
+                 const descriptor = descriptors[route.key];
+                 const routeIsPreloaded = isPreloaded(route.key);
+                 const routeIsRemovalPrevented = isRemovalPrevented(route.key);
+                 const options = descriptor.options;
+                 return /*#__PURE__*/ (0, _jsxruntime().jsx)(ScreenView, {
+-                    routeKey: route.key,
++                    routeKey: screenKey,
+                     routeName: route.name,
+                     descriptor: descriptor,
+                     options: options,
+@@ -153,7 +160,7 @@ function ExperimentalStackView({ state, emit, pop, descriptors, isPreloaded, isR
+                             target: route.key
+                         });
+                     }
+-                }, route.key);
++                }, screenKey);
+             })
+         })
+     });
+@@ -164,7 +171,8 @@ function ScreenView({ routeKey, routeName, descriptor, options, isPreloaded, pre
          title: options.title,
          hidden: options.headerShown === undefined ? undefined : !options.headerShown,
          transparent: options.headerTransparent,
@@ -23,7 +52,7 @@ index 675bd55..fc3d501 100644
      };
      return /*#__PURE__*/ (0, _jsxruntime().jsxs)(_reactnativescreens.StackV5.Screen, {
          activityMode: isPreloaded ? 'detached' : 'attached',
-@@ -173,7 +176,10 @@ function ScreenView({ routeKey, routeName, descriptor, options, isPreloaded, pre
+@@ -173,7 +181,10 @@ function ScreenView({ routeKey, routeName, descriptor, options, isPreloaded, pre
          ...lifecycle,
          children: [
              /*#__PURE__*/ (0, _jsxruntime().jsx)(_reactnative().View, {
