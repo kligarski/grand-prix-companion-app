@@ -1,5 +1,6 @@
 import { SegmentedControl } from "@expo/ui/community/segmented-control";
 import { Host, SegmentedButton, SingleChoiceSegmentedButtonRow, Text } from "@expo/ui/jetpack-compose";
+import { semantics } from "@expo/ui/jetpack-compose/modifiers";
 import { Platform } from "react-native";
 
 import type { Season, SeasonSession } from "@/api/protocol";
@@ -64,6 +65,8 @@ function SessionPicker({ sessions, selected, onSelect }: SessionPickerProps) {
             selected={session === selected}
             onClick={() => onSelect(session)}
             colors={buttonColors}
+            // TalkBack reads "Sprint Qualifying", not "SQ". The iOS control has no per-segment label.
+            modifiers={[semantics({ contentDescription: SESSION_LABELS[session] })]}
           >
             <SegmentedButton.Label>
               <Text maxLines={1} softWrap={false}>

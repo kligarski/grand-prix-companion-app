@@ -248,7 +248,9 @@ export type ResultEntry = {
   team: string;
   teamColour: string | null;
   /**
-   * Race/sprint: finishing time or gap text, e.g. "1:25:01.123", "+5.432", "+1 Lap", "Retired".
+   * Race/sprint: the winner's race time, then the gap to the winner, e.g. "1:25:01.123", "+5.432",
+   * "+1:02.677"; cars that finished laps down have "+1 Lap", "+2 Laps". null for drivers who didn't
+   * finish, even when classified (see `status`).
    * Practice: the driver's best lap, e.g. "1:47.070". Qualifying and sprint qualifying: the
    * driver's lap from the last segment they reached (Q3, else Q2, else Q1), which isn't
    * necessarily their best of the session.
