@@ -6,6 +6,7 @@ export { DriverTable, type DriverTableEntry } from "./DriverTable";
 export { Icon, iconNames, type IconName } from "./Icon";
 export { LiveBadge } from "./LiveBadge";
 export { PositionBadge } from "./PositionBadge";
+export { RoundChips, type RoundChip } from "./RoundChips";
 export { SectionHeader } from "./SectionHeader";
 export { SectorSplits, type SectorSplit, type SectorStatus } from "./SectorSplits";
 export { StandingRow } from "./StandingRow";

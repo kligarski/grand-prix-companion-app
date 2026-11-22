@@ -8,7 +8,7 @@ import { topWithFavourite } from "./topWithFavourite";
 import { TyreBadge, type TyreCompound } from "./TyreBadge";
 
 export type DriverTableEntry = {
-  position: number;
+  position: number | string;
   code: string;
   name?: string;
   teamColor: string;

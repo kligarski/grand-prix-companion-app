@@ -1,20 +1,36 @@
 import SettingsIcon from "@expo/material-symbols/settings.xml";
 import { Button as UIButton, Host, Switch } from "@expo/ui";
-import { Button as ComposeButton, Icon, IconButton, Text } from "@expo/ui/jetpack-compose";
+import { Button as ComposeButton, Icon as ComposeIcon, IconButton, Text } from "@expo/ui/jetpack-compose";
 import { fillMaxWidth } from "@expo/ui/jetpack-compose/modifiers";
 import { Button as SwiftUIButton, Text as SwiftUIText } from "@expo/ui/swift-ui";
 import { buttonStyle, controlSize, frame, tint } from "@expo/ui/swift-ui/modifiers";
 import { router, useNavigation, type ExperimentalStackNavigationProp } from "expo-router";
-import { useLayoutEffect } from "react";
-import { Button, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { useLayoutEffect, useRef, useState, type ComponentRef } from "react";
+import { Button, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { useLive, useSessionData } from "@/api/LiveSessionProvider";
-import type { Round, SeasonSession, SessionStatus, TrackStatus } from "@/api/protocol";
-import { formatSessionTime, nextRound, SESSION_LABELS } from "@/api/season";
+import type { Round, Season, SeasonSession, SessionStatus, TrackStatus } from "@/api/protocol";
+import {
+  formatSessionTime,
+  nextRound,
+  resolveSelection,
+  SESSION_LABELS,
+  sessionsWithResults,
+  type SessionSelection,
+} from "@/api/season";
 import type { LiveStatus } from "@/api/useLiveSession";
 import { toConstructorStandingEntries, toDriverStandingEntries } from "@/components/standings";
+import { ResultsCard } from "@/components/ResultsCard";
 import { StandingsCard } from "@/components/StandingsCard";
-import { AppText, Card, LiveBadge, SectionHeader, WeekendSchedule, type WeekendSession } from "@/components/ui";
+import {
+  AppText,
+  Card,
+  Icon,
+  LiveBadge,
+  SectionHeader,
+  WeekendSchedule,
+  type WeekendSession,
+} from "@/components/ui";
 import { usePreferences } from "@/preferences/PreferencesProvider";
 import { palette, spacing, useTheme } from "@/theme";
 
@@ -139,15 +155,40 @@ function LiveCard() {
   );
 }
 
+/** "Results ›" on a schedule row. It only selects the session in the Results card, so it shows with spoilers off too. */
+function ResultsLink({ session, onPress }: { session: SeasonSession["type"]; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={`${SESSION_LABELS[session]} results`}
+      onPress={onPress}
+      hitSlop={spacing.sm}
+      style={({ pressed }) => [styles.link, pressed && styles.linkPressed]}
+    >
+      <AppText variant="callout" color="link">
+        Results
+      </AppText>
+      <Icon name="chevronRight" size={14} color="link" />
+    </Pressable>
+  );
+}
+
+type WeekendCardProps = {
+  round: Round;
+  season: Season;
+  onShowResults: (session: SeasonSession["type"]) => void;
+};
+
 /**
  * This weekend's sessions in the device's time zone. Sessions before the replayed one are finished;
- * the replayed one follows the live socket. A separate component, like `LiveCard`, because it reads
- * the live state.
+ * the replayed one follows the live socket. Sessions with results link to them. A separate component,
+ * like `LiveCard`, because it reads the live state.
  */
-function WeekendCard({ round }: { round: Round }) {
+function WeekendCard({ round, season, onShowResults }: WeekendCardProps) {
   const { status, live } = useLive();
   const liveStatus = liveSessionStatus(status, live?.state.sessionStatus);
   const liveIndex = round.sessions.findIndex((session) => session.type === LIVE_SESSION_TYPE);
+  const withResults = sessionsWithResults(season, round.round);
 
   const sessions = round.sessions.map(
     (session, index): WeekendSession => ({
@@ -155,6 +196,9 @@ function WeekendCard({ round }: { round: Round }) {
       title: SESSION_LABELS[session.type],
       subtitle: formatSessionTime(session.startUtc),
       status: index < liveIndex ? "finished" : index === liveIndex ? liveStatus : undefined,
+      trailing: withResults.includes(session.type) ? (
+        <ResultsLink session={session.type} onPress={() => onShowResults(session.type)} />
+      ) : undefined,
     }),
   );
 
@@ -174,6 +218,22 @@ export default function Dashboard() {
   const { showSpoilers, setShowSpoilers, favouriteDriverCode } = usePreferences();
   const { season } = useSessionData();
   const round = season ? nextRound(season) : null;
+  const [selection, setSelection] = useState<SessionSelection | null>(null);
+  const resultsSelection = season ? resolveSelection(season, selection) : null;
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  const resultsY = useRef(0);
+  // iOS lays the content out under the header and insets it (`adjustedContentInset`, which React
+  // Native doesn't report), so offset 0 is behind the header. The first scroll event, sent when iOS
+  // applies the inset on mount, has the resting offset (e.g. -116). Android has no inset: its first
+  // event comes from the user, so anything above 0 means 0.
+  const restOffset = useRef<number | null>(null);
+
+  // A schedule link selects its session in the Results card and scrolls the card into view.
+  const showResults = (session: SeasonSession["type"]) => {
+    if (!round) return;
+    setSelection({ round: round.round, session });
+    scroll.current?.scrollTo({ y: resultsY.current + (restOffset.current ?? 0) - spacing.lg, animated: true });
+  };
 
   const openSettings = () => router.push("/settings");
 
@@ -188,7 +248,7 @@ export default function Dashboard() {
   const SettingsButton = (
     <Host matchContents colorScheme={scheme}>
       <IconButton onClick={openSettings}>
-        <Icon source={SettingsIcon} contentDescription="Settings" />
+        <ComposeIcon source={SettingsIcon} contentDescription="Settings" />
       </IconButton>
     </Host>
   );
@@ -219,7 +279,14 @@ export default function Dashboard() {
   });
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
+    <ScrollView
+      ref={scroll}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={styles.content}
+      onScroll={(event) => {
+        restOffset.current ??= Math.min(0, event.nativeEvent.contentOffset.y);
+      }}
+    >
       <View>
         <AppText variant="largeTitle" accessibilityRole="header">
           Race Weekend
@@ -231,9 +298,19 @@ export default function Dashboard() {
         ) : null}
       </View>
       <LiveCard />
-      {round ? <WeekendCard round={round} /> : null}
+      {round && season ? <WeekendCard round={round} season={season} onShowResults={showResults} /> : null}
       {season ? (
         <>
+          {resultsSelection ? (
+            <View onLayout={(event) => (resultsY.current = event.nativeEvent.layout.y)}>
+              <ResultsCard
+                season={season}
+                selection={resultsSelection}
+                onSelectionChange={setSelection}
+                favouriteCode={favouriteDriverCode ?? undefined}
+              />
+            </View>
+          ) : null}
           <StandingsCard
             title="Driver standings"
             entries={toDriverStandingEntries(season, colors.textTertiary)}
@@ -263,5 +340,13 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: spacing.sm,
+  },
+  link: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xxs,
+  },
+  linkPressed: {
+    opacity: 0.6,
   },
 });
