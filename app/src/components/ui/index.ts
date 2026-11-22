@@ -12,3 +12,4 @@ export { StandingRow } from "./StandingRow";
 export { StandingsTable, type StandingsTableEntry } from "./StandingsTable";
 export { TeamStripe } from "./TeamStripe";
 export { TyreBadge, type TyreCompound } from "./TyreBadge";
+export { WeekendSchedule, type WeekendSession } from "./WeekendSchedule";

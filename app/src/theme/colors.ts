@@ -72,6 +72,9 @@ export type ColorTokens = {
   highlight: string;
   onHighlight: string;
   onHighlightSecondary: string;
+
+  /** Opaque cover over spoilers where real blur isn't available (Android 11 and older) */
+  spoilerScrim: string;
 };
 
 export const darkColors: ColorTokens = {
@@ -97,6 +100,8 @@ export const darkColors: ColorTokens = {
   highlight: "#FFFFFF",
   onHighlight: "#0B0A0F",
   onHighlightSecondary: "#5E5D63",
+
+  spoilerScrim: "#1A1D26",
 };
 
 export const lightColors: ColorTokens = {
@@ -122,4 +127,6 @@ export const lightColors: ColorTokens = {
   highlight: "#0B0A0F",
   onHighlight: "#FFFFFF",
   onHighlightSecondary: "#A3A2A8",
+
+  spoilerScrim: "#EEEDF2",
 };

@@ -12,6 +12,7 @@ const icons = {
   chevronRight: { ios: "chevron.right", android: "chevron_right", web: "chevron_right" },
   clock: { ios: "clock", android: "schedule", web: "schedule" },
   close: { ios: "xmark", android: "close", web: "close" },
+  eye: { ios: "eye", android: "visibility", web: "visibility" },
   search: { ios: "magnifyingglass", android: "search", web: "search" },
   settings: { ios: "gearshape", android: "settings", web: "settings" },
   sliders: { ios: "slider.horizontal.3", android: "tune", web: "tune" },
