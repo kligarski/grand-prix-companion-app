@@ -160,7 +160,6 @@ export default function Dashboard() {
         ) : null}
       </View>
       <LiveCard />
-      <Button title="Onboarding" onPress={() => router.push("/onboarding")} />
       {__DEV__ ? <Button title="Storybook" onPress={() => router.push("/storybook")} /> : null}
       {__DEV__ ? <Button title="Server test" onPress={() => router.push("/server-test")} /> : null}
     </ScrollView>
