@@ -6,6 +6,8 @@ import { useTheme } from "@/theme";
 type Options = {
   title: string;
   subtitle?: string;
+  /** A large title that collapses on scroll: iOS large title, Android Material large app bar. */
+  large?: boolean;
 };
 
 /**
@@ -13,7 +15,7 @@ type Options = {
  * of Material's tinted surface, matching the dashboard. Options merge shallowly, so this sets the
  * whole `unstable_headerConfig`.
  */
-export function useScreenHeader({ title, subtitle }: Options) {
+export function useScreenHeader({ title, subtitle, large = false }: Options) {
   const navigation = useNavigation<ExperimentalStackNavigationProp<ReactNavigation.RootParamList>>();
   const { colors } = useTheme();
 
@@ -22,8 +24,13 @@ export function useScreenHeader({ title, subtitle }: Options) {
       title,
       unstable_headerConfig: {
         subtitle,
-        android: { backgroundColor: colors.background, scrolledBackgroundColor: colors.background },
+        ios: large ? { largeTitleEnabled: true } : undefined,
+        android: {
+          type: large ? "large" : undefined,
+          backgroundColor: colors.background,
+          scrolledBackgroundColor: colors.background,
+        },
       },
     });
-  }, [navigation, title, subtitle, colors.background]);
+  }, [navigation, title, subtitle, large, colors.background]);
 }
