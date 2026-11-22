@@ -1,16 +1,16 @@
 import SettingsIcon from "@expo/material-symbols/settings.xml";
-import { Host, Switch } from "@expo/ui";
+import { Button as UIButton, Host, Switch } from "@expo/ui";
 import { Button as ComposeButton, Icon, IconButton, Text } from "@expo/ui/jetpack-compose";
 import { fillMaxWidth } from "@expo/ui/jetpack-compose/modifiers";
 import { Button as SwiftUIButton, Text as SwiftUIText } from "@expo/ui/swift-ui";
 import { buttonStyle, controlSize, frame, tint } from "@expo/ui/swift-ui/modifiers";
 import { router, useNavigation, type ExperimentalStackNavigationProp } from "expo-router";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Button, Platform, ScrollView, StyleSheet, View } from "react-native";
 
-import type { Round, Season, SessionInfo, TrackStatus } from "@/api/protocol";
-import { SERVER_URL, SESSION_ID } from "@/api/server";
-import { useLiveSession } from "@/api/useLiveSession";
+import { useLive, useSessionData } from "@/api/LiveSessionProvider";
+import type { TrackStatus } from "@/api/protocol";
+import { nextRound } from "@/api/season";
 import { AppText, Card, LiveBadge } from "@/components/ui";
 import { palette, spacing, useTheme } from "@/theme";
 
@@ -27,21 +27,16 @@ export default function Dashboard() {
   const { scheme, colors } = useTheme();
   const navigation = useNavigation<ExperimentalStackNavigationProp<ReactNavigation.RootParamList>>();
   const [spoilers, setSpoilers] = useState(true);
-  const [round, setRound] = useState<Round | null>(null);
-  const [session, setSession] = useState<SessionInfo | null>(null);
-  const { live } = useLiveSession(SESSION_ID, { autoConnect: true });
+  const { session, season, error, reload } = useSessionData();
+  const { live, reconnect } = useLive();
+  const round = season ? nextRound(season) : null;
 
   const openSettings = () => router.push("/settings");
   const openLiveTiming = () => router.push("/live");
-
-  useEffect(() => {
-    fetch(`${SERVER_URL}/season`)
-      .then((response) => response.json())
-      .then((season: Season) => setRound(season.schedule.find((r) => r.round === season.asOfRound + 1) ?? null));
-    fetch(`${SERVER_URL}/sessions/${SESSION_ID}`)
-      .then((response) => response.json())
-      .then(setSession);
-  }, []);
+  const retry = () => {
+    reload();
+    reconnect();
+  };
 
   const liveSummary = live
     ? [session?.name, `Lap ${live.state.lap} of ${live.state.totalLaps}`, TRACK_STATUS[live.state.trackStatus]]
@@ -130,6 +125,18 @@ export default function Dashboard() {
                 <Text>Watch live timing</Text>
               </ComposeButton>
             )}
+          </Host>
+        </Card>
+      ) : error ? (
+        <Card>
+          <View>
+            <AppText variant="title">{"Can't reach the server"}</AppText>
+            <AppText variant="callout" color="textSecondary">
+              Check your connection and try again.
+            </AppText>
+          </View>
+          <Host matchContents colorScheme={scheme}>
+            <UIButton label="Retry" variant="outlined" onPress={retry} />
           </Host>
         </Card>
       ) : null}

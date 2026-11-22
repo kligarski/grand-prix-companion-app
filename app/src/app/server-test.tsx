@@ -6,7 +6,7 @@ import type { SessionInfo } from "@/api/protocol";
 import { SERVER_URL, SESSION_ID } from "@/api/server";
 import { useLiveSession } from "@/api/useLiveSession";
 import { AppText, Card } from "@/components/ui";
-import { createThemedStyles, radii, spacing } from "@/theme";
+import { createThemedStyles, radii, spacing, useTheme } from "@/theme";
 
 const MAX_JSON_CHARS = 3000;
 
@@ -57,8 +57,9 @@ function formatGap(gap: { ms: number | null; laps: number } | null) {
 }
 
 function NativeButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const { scheme } = useTheme();
   return (
-    <Host matchContents>
+    <Host matchContents colorScheme={scheme}>
       <Button label={label} variant="outlined" onPress={onPress} />
     </Host>
   );
@@ -68,6 +69,8 @@ export default function ServerTest() {
   const styles = useStyles();
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [response, setResponse] = useState<Response | null>(null);
+  // A separate socket from the app's LiveSessionProvider, opened only on "Connect", so this protocol
+  // debugger's setDelay and syncTap don't change the app's timeline.
   const { status, live, lastMessage, connect, disconnect, send } = useLiveSession(SESSION_ID);
 
   const run = async (endpoint: Endpoint) => setResponse(await request(endpoint));

@@ -1,6 +1,7 @@
 import { ExperimentalStack as Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
+import { LiveSessionProvider } from "@/api/LiveSessionProvider";
 import { ThemeProvider, useTheme } from "@/theme";
 
 function RootStack() {
@@ -23,8 +24,10 @@ function RootStack() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <StatusBar style="auto" />
-      <RootStack />
+      <LiveSessionProvider>
+        <StatusBar style="auto" />
+        <RootStack />
+      </LiveSessionProvider>
     </ThemeProvider>
   );
 }
