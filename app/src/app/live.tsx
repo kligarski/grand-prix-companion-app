@@ -1,18 +1,18 @@
-import { ScrollView, StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { useLive, useSessionData } from "@/api/LiveSessionProvider";
-import type { Gap } from "@/api/protocol";
-import { DriverTable, SectionHeader, type DriverTableEntry, type TyreCompound } from "@/components/ui";
+import { toTimingEntries } from "@/api/timing";
+import { LiveTimingSheet } from "@/components/LiveTimingSheet";
 import { useScreenHeader } from "@/hooks/useScreenHeader";
 import { usePreferences } from "@/preferences/PreferencesProvider";
-import { spacing } from "@/theme";
 
-function formatInterval(gap: Gap, position: number) {
-  if (position === 1) return "LEADER";
-  if (!gap) return "–";
-  if (gap.laps > 0) return `+${gap.laps}L`;
-  return gap.ms === null ? "–" : `+${(gap.ms / 1000).toFixed(3)}`;
-}
+// On iOS the screen's content runs under the native header, so the expanded sheet would slide under
+// the navigation bar. The app's root safe area only covers the status bar; a provider inside the
+// screen measures the screen's own safe area, which includes the navigation bar. A margin rather
+// than padding, because the sheet fills its container absolutely and padding doesn't move it. On
+// Android the content already starts below the app bar, so the top edge adds nothing there.
+const TOP_EDGES = ["top"] as const;
 
 export default function Live() {
   const { session } = useSessionData();
@@ -24,32 +24,25 @@ export default function Live() {
     subtitle: live && session ? `${session.name} · Lap ${live.state.lap}/${live.state.totalLaps}` : undefined,
   });
 
-  const entries: DriverTableEntry[] = (session?.drivers ?? [])
-    .flatMap((driver) => {
-      const state = live?.state.drivers[driver.number];
-      if (!state?.position) return [];
-      const compound = state.tyre?.compound;
-      return {
-        position: state.position,
-        code: driver.code,
-        teamColor: `#${driver.teamColour}`,
-        value: formatInterval(state.interval, state.position),
-        tyre: compound && compound !== "UNKNOWN" ? (compound as TyreCompound) : undefined,
-      };
-    })
-    .sort((a, b) => a.position - b.position);
-
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
-      <SectionHeader title="Timing" subtitle="Interval to car ahead" />
-      <DriverTable entries={entries} favouriteCode={favouriteDriverCode ?? undefined} />
-    </ScrollView>
+    <SafeAreaProvider>
+      <SafeAreaView edges={TOP_EDGES} mode="margin" style={styles.screen}>
+        {/* Widgets and the track map go here, above the collapsed sheet. */}
+        <View style={styles.reserved} />
+        <LiveTimingSheet
+          entries={toTimingEntries(session, live?.state)}
+          favouriteCode={favouriteDriverCode ?? undefined}
+        />
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    padding: spacing.lg,
-    gap: spacing.md,
+  screen: {
+    flex: 1,
+  },
+  reserved: {
+    flex: 1,
   },
 });

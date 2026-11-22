@@ -50,6 +50,8 @@ export type ColorTokens = {
   tile: string;
   /** Bottom sheets and modals */
   sheet: string;
+  /** Shadow cast by a bottom sheet onto the screen behind it */
+  sheetShadow: string;
   /** Inputs, pill buttons, segmented control track */
   fill: string;
   /** Selected segment of a segmented control */
@@ -83,6 +85,7 @@ export const darkColors: ColorTokens = {
   surfaceElevated: "#1A1D26",
   tile: "#1A1D26",
   sheet: "#15161B",
+  sheetShadow: "#00000099",
   fill: "#1D1D1F",
   fillSelected: "#57585D",
   separator: "#22252F",
@@ -110,6 +113,7 @@ export const lightColors: ColorTokens = {
   surfaceElevated: "#EEEDF2",
   tile: "#FFFFFF",
   sheet: "#FFFFFF",
+  sheetShadow: "#0000001F",
   fill: "#E6E6EB",
   fillSelected: "#FFFFFF",
   separator: "#E3E2E8",
