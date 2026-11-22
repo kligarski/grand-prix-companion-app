@@ -83,7 +83,13 @@ export function useLiveSession(sessionId: string, { autoConnect = false } = {}) 
     setStatus("closed");
   };
 
-  const send = (message: ClientMessage) => socket.current?.send(JSON.stringify(message));
+  /** Sends a message if the socket is open. Returns whether it was sent. */
+  const send = (message: ClientMessage) => {
+    const ws = socket.current;
+    if (ws?.readyState !== WebSocket.OPEN) return false;
+    ws.send(JSON.stringify(message));
+    return true;
+  };
 
   useEffect(() => {
     if (autoConnect) {

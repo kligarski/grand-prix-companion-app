@@ -1,4 +1,15 @@
-import { createContext, use, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
+import { AppState, type AppStateStatus } from "react-native";
 
 import type { ClientMessage, Season, SessionDetails } from "./protocol";
 import { getJson, SESSION_ID } from "./server";
@@ -7,7 +18,12 @@ import { useLiveSession, type LiveSession, type LiveStatus } from "./useLiveSess
 export type SessionData = {
   session: SessionDetails | null;
   season: Season | null;
-  error: string | null;
+  /** Why the last fetch of the session failed, cleared when one succeeds. */
+  sessionError: string | null;
+  /** Why the last fetch of the season failed, cleared when one succeeds. */
+  seasonError: string | null;
+  /** Whether a fetch is in flight. */
+  loading: boolean;
   /** Fetches the session and the season again. */
   reload: () => void;
 };
@@ -15,8 +31,9 @@ export type SessionData = {
 export type Live = {
   status: LiveStatus;
   live: LiveSession | null;
-  send: (message: ClientMessage) => void;
-  /** Opens a new socket in place of the current one. */
+  /** Sends a message if the socket is open. Returns whether it was sent. */
+  send: (message: ClientMessage) => boolean;
+  /** Opens a new socket in place of the current one, at the last delay. */
   reconnect: () => void;
 };
 
@@ -27,37 +44,80 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+type Setter<T> = Dispatch<SetStateAction<T>>;
+
+/** Fetches `path` into `setData`, or its error into `setError`. Ignores the result once `signal` aborts. */
+function load<T>(path: string, signal: AbortSignal, setData: Setter<T | null>, setError: Setter<string | null>) {
+  return getJson<T>(path, signal).then(
+    (result) => {
+      if (signal.aborted) return;
+      setData(result);
+      setError(null);
+    },
+    (reason: unknown) => {
+      if (!signal.aborted) setError(errorMessage(reason));
+    },
+  );
+}
+
 function SessionDataProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionDetails | null>(null);
   const [season, setSeason] = useState<Season | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [seasonError, setSeasonError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    let active = true;
-    const fail = (reason: unknown) => active && setError(errorMessage(reason));
-    getJson<SessionDetails>(`/sessions/${SESSION_ID}`)
-      .then((result) => active && setSession(result))
-      .catch(fail);
-    getJson<Season>("/season")
-      .then((result) => active && setSeason(result))
-      .catch(fail);
-    return () => {
-      active = false;
-    };
+    const controller = new AbortController();
+    Promise.all([
+      load(`/sessions/${SESSION_ID}`, controller.signal, setSession, setSessionError),
+      load("/season", controller.signal, setSeason, setSeasonError),
+    ]).then(() => !controller.signal.aborted && setLoading(false));
+    return () => controller.abort();
   }, [attempt]);
 
+  // Errors stay until a fetch succeeds, so the error card doesn't disappear while retrying.
   const reload = () => {
-    setError(null);
+    setLoading(true);
     setAttempt((current) => current + 1);
   };
 
-  return <SessionDataContext value={{ session, season, error, reload }}>{children}</SessionDataContext>;
+  return (
+    <SessionDataContext value={{ session, season, sessionError, seasonError, loading, reload }}>
+      {children}
+    </SessionDataContext>
+  );
 }
 
 function LiveProvider({ children }: { children: ReactNode }) {
-  const { status, live, send, connect } = useLiveSession(SESSION_ID, { autoConnect: true });
-  const reconnect = () => connect();
+  const { status, live, send: sendMessage, connect } = useLiveSession(SESSION_ID, { autoConnect: true });
+  // The delay this viewer last chose, so a new socket picks up where the old one was.
+  const delayMs = useRef(0);
+  const liveDelayMs = live?.delayMs;
+
+  useEffect(() => {
+    if (liveDelayMs !== undefined) delayMs.current = liveDelayMs;
+  }, [liveDelayMs]);
+
+  const reconnect = () => connect(delayMs.current);
+
+  const send = (message: ClientMessage) => {
+    const sent = sendMessage(message);
+    if (sent && message.type === "setDelay") delayMs.current = message.delayMs;
+    return sent;
+  };
+
+  // A socket dropped while the app was in the background (or the server restarted) isn't retried on
+  // its own; reconnect when the user comes back to the app.
+  const onAppStateChange = useEffectEvent((state: AppStateStatus) => {
+    if (state === "active" && (status === "closed" || status === "error")) reconnect();
+  });
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", onAppStateChange);
+    return () => subscription.remove();
+  }, []);
 
   return <LiveContext value={{ status, live, send, reconnect }}>{children}</LiveContext>;
 }

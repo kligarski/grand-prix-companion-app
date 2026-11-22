@@ -14,11 +14,25 @@ export function websocketUrl(path: string) {
   return SERVER_URL.replace(/^http/, "ws") + path;
 }
 
-/** GETs a path on the server and parses the JSON body. Rejects on network errors and non-2xx responses. */
-export async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(SERVER_URL + path);
-  if (!response.ok) throw new Error(`GET ${path} failed with ${response.status}`);
-  return (await response.json()) as T;
+const FETCH_TIMEOUT_MS = 10_000;
+
+/**
+ * GETs a path on the server and parses the JSON body. Rejects on network errors, non-2xx responses,
+ * after FETCH_TIMEOUT_MS, and when `signal` aborts.
+ */
+export async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  const timeout = setTimeout(abort, FETCH_TIMEOUT_MS);
+  signal?.addEventListener("abort", abort);
+  try {
+    const response = await fetch(SERVER_URL + path, { signal: controller.signal });
+    if (!response.ok) throw new Error(`GET ${path} failed with ${response.status}`);
+    return (await response.json()) as T;
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener("abort", abort);
+  }
 }
 
 /** The only session the server replays for now. */
