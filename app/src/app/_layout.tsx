@@ -1,5 +1,6 @@
 import { ExperimentalStack as Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import type { ReactNode } from "react";
 
 import { LiveSessionProvider } from "@/api/LiveSessionProvider";
 import { PreferencesProvider, usePreferences } from "@/preferences/PreferencesProvider";
@@ -26,6 +27,7 @@ function RootStack() {
         <Stack.Screen name="index" options={{ title: "", headerShown }} />
         <Stack.Screen name="live" options={{ title: "", headerShown }} />
         <Stack.Screen name="settings" options={{ title: "Settings", headerShown }} />
+        <Stack.Screen name="favourite-driver" options={{ title: "Favourite driver", headerShown }} />
         <Stack.Screen name="standings/[kind]" options={{ title: "", headerShown }} />
         <Stack.Screen name="results/[round]/[session]" options={{ title: "", headerShown }} />
       </Stack.Protected>
@@ -40,15 +42,31 @@ function RootStack() {
   );
 }
 
+/** The status bar follows the app's scheme, which may override the system one. */
+function ThemedStatusBar() {
+  const { scheme } = useTheme();
+  return <StatusBar style={scheme === "dark" ? "light" : "dark"} />;
+}
+
+/** The theme follows the stored Appearance preference, read before the first render. */
+function ThemedRoot({ children }: { children: ReactNode }) {
+  const { appearance, setAppearance } = usePreferences();
+  return (
+    <ThemeProvider preference={appearance} onPreferenceChange={setAppearance}>
+      {children}
+    </ThemeProvider>
+  );
+}
+
 export default function RootLayout() {
   return (
     <PreferencesProvider>
-      <ThemeProvider>
+      <ThemedRoot>
         <LiveSessionProvider>
-          <StatusBar style="auto" />
+          <ThemedStatusBar />
           <RootStack />
         </LiveSessionProvider>
-      </ThemeProvider>
+      </ThemedRoot>
     </PreferencesProvider>
   );
 }
