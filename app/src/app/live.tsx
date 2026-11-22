@@ -1,10 +1,9 @@
 import { useNavigation, type ExperimentalStackNavigationProp } from "expo-router";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useLayoutEffect } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
-import type { Gap, SessionDetails } from "@/api/protocol";
-import { SERVER_URL, SESSION_ID } from "@/api/server";
-import { useLiveSession } from "@/api/useLiveSession";
+import { useLive, useSessionData } from "@/api/LiveSessionProvider";
+import type { Gap } from "@/api/protocol";
 import { DriverTable, SectionHeader, type DriverTableEntry, type TyreCompound } from "@/components/ui";
 import { spacing } from "@/theme";
 
@@ -17,14 +16,8 @@ function formatInterval(gap: Gap, position: number) {
 
 export default function Live() {
   const navigation = useNavigation<ExperimentalStackNavigationProp<ReactNavigation.RootParamList>>();
-  const [session, setSession] = useState<SessionDetails | null>(null);
-  const { live } = useLiveSession(SESSION_ID, { autoConnect: true });
-
-  useEffect(() => {
-    fetch(`${SERVER_URL}/sessions/${SESSION_ID}`)
-      .then((response) => response.json())
-      .then(setSession);
-  }, []);
+  const { session } = useSessionData();
+  const { live } = useLive();
 
   useLayoutEffect(() => {
     navigation.setOptions({

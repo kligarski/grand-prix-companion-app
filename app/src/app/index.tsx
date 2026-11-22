@@ -1,16 +1,16 @@
 import SettingsIcon from "@expo/material-symbols/settings.xml";
-import { Host, Switch } from "@expo/ui";
+import { Button as UIButton, Host, Switch } from "@expo/ui";
 import { Button as ComposeButton, Icon, IconButton, Text } from "@expo/ui/jetpack-compose";
 import { fillMaxWidth } from "@expo/ui/jetpack-compose/modifiers";
 import { Button as SwiftUIButton, Text as SwiftUIText } from "@expo/ui/swift-ui";
 import { buttonStyle, controlSize, frame, tint } from "@expo/ui/swift-ui/modifiers";
 import { router, useNavigation, type ExperimentalStackNavigationProp } from "expo-router";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Button, Platform, ScrollView, StyleSheet, View } from "react-native";
 
-import type { Round, Season, SessionInfo, TrackStatus } from "@/api/protocol";
-import { SERVER_URL, SESSION_ID } from "@/api/server";
-import { useLiveSession } from "@/api/useLiveSession";
+import { useLive, useSessionData } from "@/api/LiveSessionProvider";
+import type { TrackStatus } from "@/api/protocol";
+import { nextRound } from "@/api/season";
 import { AppText, Card, LiveBadge } from "@/components/ui";
 import { palette, spacing, useTheme } from "@/theme";
 
@@ -23,31 +23,88 @@ const TRACK_STATUS: Record<TrackStatus, string | null> = {
   red: "Red flag",
 };
 
+/**
+ * The live session card, or "Can't reach the server" when a fetch or the socket failed. A separate
+ * component so only it re-renders on every live update, not the whole dashboard.
+ */
+function LiveCard() {
+  const { scheme } = useTheme();
+  const { session, sessionError, seasonError, loading, reload } = useSessionData();
+  const { status, live, reconnect } = useLive();
+  const fetchFailed = sessionError !== null || seasonError !== null;
+  const socketFailed = status === "closed" || status === "error";
+
+  const openLiveTiming = () => router.push("/live");
+  const retry = () => {
+    if (fetchFailed) reload();
+    if (status !== "open") reconnect();
+  };
+
+  if (fetchFailed || socketFailed) {
+    return (
+      <Card>
+        <View>
+          <AppText variant="title">{"Can't reach the server"}</AppText>
+          <AppText variant="callout" color="textSecondary">
+            Check your connection and try again.
+          </AppText>
+        </View>
+        <Host matchContents colorScheme={scheme}>
+          <UIButton label="Retry" variant="outlined" disabled={loading} onPress={retry} />
+        </Host>
+      </Card>
+    );
+  }
+
+  if (!session) return null;
+
+  const liveSummary = live
+    ? [session.name, `Lap ${live.state.lap} of ${live.state.totalLaps}`, TRACK_STATUS[live.state.trackStatus]]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
+
+  return (
+    <Card>
+      <LiveBadge label="LIVE NOW" />
+      <View>
+        <AppText variant="title">{session.meeting}</AppText>
+        {liveSummary ? (
+          <AppText variant="callout" color="textSecondary">
+            {liveSummary}
+          </AppText>
+        ) : null}
+      </View>
+      <Host matchContents={{ vertical: true }} colorScheme={scheme}>
+        {Platform.OS === "ios" ? (
+          <SwiftUIButton
+            onPress={openLiveTiming}
+            modifiers={[buttonStyle("borderedProminent"), controlSize("large"), tint(palette.brand)]}
+          >
+            <SwiftUIText modifiers={[frame({ maxWidth: Infinity })]}>Watch live timing</SwiftUIText>
+          </SwiftUIButton>
+        ) : (
+          <ComposeButton
+            onClick={openLiveTiming}
+            colors={{ containerColor: palette.brand, contentColor: palette.white }}
+            modifiers={[fillMaxWidth()]}
+          >
+            <Text>Watch live timing</Text>
+          </ComposeButton>
+        )}
+      </Host>
+    </Card>
+  );
+}
+
 export default function Dashboard() {
   const { scheme, colors } = useTheme();
   const navigation = useNavigation<ExperimentalStackNavigationProp<ReactNavigation.RootParamList>>();
   const [spoilers, setSpoilers] = useState(true);
-  const [round, setRound] = useState<Round | null>(null);
-  const [session, setSession] = useState<SessionInfo | null>(null);
-  const { live } = useLiveSession(SESSION_ID, { autoConnect: true });
+  const { season } = useSessionData();
+  const round = season ? nextRound(season) : null;
 
   const openSettings = () => router.push("/settings");
-  const openLiveTiming = () => router.push("/live");
-
-  useEffect(() => {
-    fetch(`${SERVER_URL}/season`)
-      .then((response) => response.json())
-      .then((season: Season) => setRound(season.schedule.find((r) => r.round === season.asOfRound + 1) ?? null));
-    fetch(`${SERVER_URL}/sessions/${SESSION_ID}`)
-      .then((response) => response.json())
-      .then(setSession);
-  }, []);
-
-  const liveSummary = live
-    ? [session?.name, `Lap ${live.state.lap} of ${live.state.totalLaps}`, TRACK_STATUS[live.state.trackStatus]]
-        .filter(Boolean)
-        .join(" · ")
-    : null;
 
   const SpoilersSwitch = (
     <View style={styles.spoilers}>
@@ -102,37 +159,7 @@ export default function Dashboard() {
           </AppText>
         ) : null}
       </View>
-      {session ? (
-        <Card>
-          <LiveBadge label="LIVE NOW" />
-          <View>
-            <AppText variant="title">{session.meeting}</AppText>
-            {liveSummary ? (
-              <AppText variant="callout" color="textSecondary">
-                {liveSummary}
-              </AppText>
-            ) : null}
-          </View>
-          <Host matchContents={{ vertical: true }} colorScheme={scheme}>
-            {Platform.OS === "ios" ? (
-              <SwiftUIButton
-                onPress={openLiveTiming}
-                modifiers={[buttonStyle("borderedProminent"), controlSize("large"), tint(palette.brand)]}
-              >
-                <SwiftUIText modifiers={[frame({ maxWidth: Infinity })]}>Watch live timing</SwiftUIText>
-              </SwiftUIButton>
-            ) : (
-              <ComposeButton
-                onClick={openLiveTiming}
-                colors={{ containerColor: palette.brand, contentColor: palette.white }}
-                modifiers={[fillMaxWidth()]}
-              >
-                <Text>Watch live timing</Text>
-              </ComposeButton>
-            )}
-          </Host>
-        </Card>
-      ) : null}
+      <LiveCard />
       <Button title="Onboarding" onPress={() => router.push("/onboarding")} />
       {__DEV__ ? <Button title="Storybook" onPress={() => router.push("/storybook")} /> : null}
       {__DEV__ ? <Button title="Server test" onPress={() => router.push("/server-test")} /> : null}
