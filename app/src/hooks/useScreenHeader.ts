@@ -26,7 +26,8 @@ export function useScreenHeader({ title, subtitle, large = false }: Options) {
         subtitle,
         ios: large ? { largeTitleEnabled: true } : undefined,
         android: {
-          type: large ? "large" : undefined,
+          // Always a valid value: RN Screens throws when an update resets `type` to undefined.
+          type: large ? "large" : "small",
           backgroundColor: colors.background,
           scrolledBackgroundColor: colors.background,
         },

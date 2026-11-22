@@ -1,4 +1,4 @@
-import { createContext, use, useLayoutEffect, useState, type ReactNode } from "react";
+import { createContext, use, useLayoutEffect, type ReactNode } from "react";
 import { Appearance, useColorScheme } from "react-native";
 
 import { darkColors, lightColors, type ColorTokens } from "./colors";
@@ -17,29 +17,17 @@ const ThemeContext = createContext<Theme | null>(null);
 
 type Props = {
   children: ReactNode;
-  /** The starting preference when uncontrolled (no `preference` prop). */
-  initialPreference?: ThemePreference;
-  /** Makes the provider controlled: the preference comes from here, e.g. persisted preferences. */
-  preference?: ThemePreference;
-  /** Called by `setPreference` when controlled. */
-  onPreferenceChange?: (preference: ThemePreference) => void;
+  /** The stored Appearance preference. */
+  preference: ThemePreference;
+  /** Called by `setPreference`, e.g. to persist the new preference. */
+  onPreferenceChange: (preference: ThemePreference) => void;
 };
 
-export function ThemeProvider({
-  children,
-  initialPreference = "system",
-  preference: controlledPreference,
-  onPreferenceChange,
-}: Props) {
-  const [internalPreference, setInternalPreference] = useState<ThemePreference>(initialPreference);
-  const preference = controlledPreference ?? internalPreference;
-  const setPreference = (next: ThemePreference) => {
-    if (controlledPreference === undefined) setInternalPreference(next);
-    onPreferenceChange?.(next);
-  };
-
+/** Controlled: the preference lives with the other stored preferences, not here. */
+export function ThemeProvider({ children, preference, onPreferenceChange }: Props) {
   // Native chrome (headers, the status bar, SwiftUI and Compose views) reads the app-wide override,
-  // so set it before the first paint: a stored "light" on a dark system never shows a dark frame.
+  // so set it as early as possible. The native setters are async, so this narrows the window for a
+  // wrong-scheme frame rather than ruling it out.
   useLayoutEffect(() => {
     Appearance.setColorScheme(preference === "system" ? "auto" : preference);
   }, [preference]);
@@ -51,7 +39,7 @@ export function ThemeProvider({
     scheme,
     colors: scheme === "dark" ? darkColors : lightColors,
     preference,
-    setPreference,
+    setPreference: onPreferenceChange,
   };
 
   return <ThemeContext value={theme}>{children}</ThemeContext>;

@@ -15,6 +15,8 @@ import {
   VStack,
 } from "@expo/ui/swift-ui";
 import {
+  accessibilityHidden,
+  accessibilityHint,
   buttonStyle,
   contentShape,
   font,
@@ -66,7 +68,10 @@ const openFavouritePicker = () => router.push("/favourite-driver");
  */
 function FavouriteRowIos({ driver }: { driver: FavouriteDriver | null }) {
   return (
-    <SwiftUIButton onPress={openFavouritePicker} modifiers={[buttonStyle("plain")]}>
+    <SwiftUIButton
+      onPress={openFavouritePicker}
+      modifiers={[buttonStyle("plain"), accessibilityHint("Opens the driver list")]}
+    >
       <HStack spacing={12} modifiers={[contentShape(shapes.rectangle())]}>
         <VStack alignment="leading" spacing={2}>
           <SwiftUIText modifiers={[foregroundStyle({ type: "hierarchical", style: "primary" })]}>
@@ -90,6 +95,8 @@ function FavouriteRowIos({ driver }: { driver: FavouriteDriver | null }) {
           modifiers={[
             font({ textStyle: "footnote", weight: "semibold" }),
             foregroundStyle({ type: "hierarchical", style: "tertiary" }),
+            // VoiceOver would read the symbol as "Forward"; the hint says where the row goes.
+            accessibilityHidden(true),
           ]}
         />
       </HStack>
@@ -180,7 +187,9 @@ function Footer({ children }: { children: string }) {
  * stored preference, so changes apply everywhere at once and survive a relaunch.
  */
 export default function Settings() {
-  useScreenHeader({ title: "Settings", large: true });
+  // iOS only: the Material large app bar collapses through nested scrolling, which the Compose list
+  // inside the RN host doesn't pass on, so a tall list would scroll under a stuck expanded header.
+  useScreenHeader({ title: "Settings", large: Platform.OS === "ios" });
   const { scheme } = useTheme();
   const themedStyles = useStyles();
   const { showSpoilers, setShowSpoilers } = usePreferences();

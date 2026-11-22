@@ -1,5 +1,5 @@
 import { Host } from "@expo/ui";
-import { Button as ComposeButton, Text as ComposeText, TextButton } from "@expo/ui/jetpack-compose";
+import { Button as ComposeButton, Text as ComposeText } from "@expo/ui/jetpack-compose";
 import { Button as SwiftUIButton, Text as SwiftUIText } from "@expo/ui/swift-ui";
 import { buttonStyle, controlSize, disabled, frame, tint } from "@expo/ui/swift-ui/modifiers";
 import { useState } from "react";
@@ -7,6 +7,7 @@ import { Platform, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { DriverPicker } from "@/components/DriverPicker";
+import { TextLinkButton } from "@/components/TextLinkButton";
 import { AppText } from "@/components/ui";
 import { usePreferences } from "@/preferences/PreferencesProvider";
 import { createThemedStyles, palette, spacing, useTheme } from "@/theme";
@@ -38,25 +39,14 @@ function Footer({ selectedCode, onContinue, onSkip }: FooterProps) {
             <SwiftUIText modifiers={[frame({ maxWidth: Infinity })]}>{continueLabel}</SwiftUIText>
           </SwiftUIButton>
         </Host>
-        <Host matchContents={{ vertical: true }} colorScheme={scheme}>
-          <SwiftUIButton
-            onPress={onSkip}
-            modifiers={[buttonStyle("borderless"), controlSize("large"), tint(colors.textSecondary)]}
-          >
-            <SwiftUIText modifiers={[frame({ maxWidth: Infinity })]}>Skip for now</SwiftUIText>
-          </SwiftUIButton>
-        </Host>
+        <TextLinkButton label="Skip for now" onPress={onSkip} iosColor={colors.textSecondary} />
       </View>
     );
   }
 
   return (
     <View style={styles.footerAndroid}>
-      <Host matchContents colorScheme={scheme}>
-        <TextButton onClick={onSkip} colors={{ contentColor: colors.link }}>
-          <ComposeText>Skip for now</ComposeText>
-        </TextButton>
-      </Host>
+      <TextLinkButton label="Skip for now" onPress={onSkip} />
       <Host matchContents colorScheme={scheme}>
         <ComposeButton
           onClick={onContinue}
