@@ -13,7 +13,7 @@ import {
   SHORT_SESSION_LABELS,
   type SessionSelection,
 } from "@/api/season";
-import { AppText, Card, DriverTable, RoundChips } from "@/components/ui";
+import { AppText, Card, CardLink, DriverTable, RoundChips } from "@/components/ui";
 import { palette, useTheme } from "@/theme";
 
 import { toResultTableEntries } from "./results";
@@ -86,13 +86,15 @@ type Props = {
   selection: SessionSelection;
   onSelectionChange: (selection: SessionSelection) => void;
   favouriteCode?: string;
+  /** Opens every row of the selected session. The "Full results" link shows only while the rows aren't hidden. */
+  onShowAll?: () => void;
 };
 
 /**
  * The top 3 of a session plus the favourite, for any round with results. Blurred when spoilers are
  * off, like the standings; the round and session pickers stay usable.
  */
-export function ResultsCard({ season, selection, onSelectionChange, favouriteCode }: Props) {
+export function ResultsCard({ season, selection, onSelectionChange, favouriteCode, onShowAll }: Props) {
   const { colors } = useTheme();
   const { hidden, reveal } = useSpoilerReveal();
 
@@ -138,6 +140,13 @@ export function ResultsCard({ season, selection, onSelectionChange, favouriteCod
           showNames
         />
       </SpoilerBlur>
+      {onShowAll && !hidden ? (
+        <CardLink
+          label="Full results"
+          accessibilityLabel={`Full results, ${roundName} ${SESSION_LABELS[selection.session]}`}
+          onPress={onShowAll}
+        />
+      ) : null}
     </Card>
   );
 }

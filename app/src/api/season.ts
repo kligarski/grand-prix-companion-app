@@ -34,6 +34,12 @@ export const RESULT_KEYS: Record<SeasonSession["type"], keyof RoundResults> = {
   Race: "race",
 };
 
+/** The session whose results live under `key` (e.g. "qualifying"), or null for an unknown key. */
+export function sessionForResultKey(key: string): SeasonSession["type"] | null {
+  const entry = Object.entries(RESULT_KEYS).find(([, resultKey]) => resultKey === key);
+  return entry ? (entry[0] as SeasonSession["type"]) : null;
+}
+
 /** Labels short enough for up to five segments in a row. */
 export const SHORT_SESSION_LABELS: Record<SeasonSession["type"], string> = {
   FP1: "FP1",

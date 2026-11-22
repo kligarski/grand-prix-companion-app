@@ -1,5 +1,6 @@
 export { AppText, type AppTextProps, type TextColor } from "./AppText";
 export { Card } from "./Card";
+export { CardLink } from "./CardLink";
 export { DriverPickerGrid, type DriverPickerItem } from "./DriverPickerGrid";
 export { DriverRow } from "./DriverRow";
 export { DriverTable, type DriverTableEntry } from "./DriverTable";
