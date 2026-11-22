@@ -8,7 +8,7 @@ import { PositionBadge } from "./PositionBadge";
 import { TeamStripe } from "./TeamStripe";
 
 type Props = {
-  position: number;
+  position: number | string;
   /** Three-letter code, e.g. "VER". */
   code: string;
   /** Optional name shown after the code, e.g. "Verstappen". */

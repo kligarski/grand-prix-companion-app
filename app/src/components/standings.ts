@@ -2,7 +2,7 @@ import type { Season } from "@/api/protocol";
 import type { StandingsTableEntry } from "@/components/ui";
 
 /** `teamColour` as a colour value, or `fallback` (a theme token) when the source has none. */
-function teamColor(teamColour: string | null, fallback: string): string {
+export function teamColor(teamColour: string | null, fallback: string): string {
   return teamColour ? `#${teamColour}` : fallback;
 }
 

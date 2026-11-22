@@ -217,6 +217,11 @@ export type Round = {
   circuit: string;
   locality: string;
   country: string;
+  /**
+   * F1-style three-letter country code, e.g. "BEL", "MON", "NED", "UAE". Not ISO 3166: taken from
+   * OpenF1 as is (round 16, the Bahrain Grand Prix held in Malaysia, has "BRN"). null if unknown.
+   */
+  countryCode: string | null;
   sessions: SeasonSession[];
 };
 
@@ -242,22 +247,44 @@ export type ResultEntry = {
   driver: SeasonDriver;
   team: string;
   teamColour: string | null;
-  /** Race: finishing time or gap text, e.g. "1:25:01.123", "+5.432", "+1 Lap", "Retired". Qualifying: best time. */
+  /**
+   * Race/sprint: the winner's race time, then the gap to the winner, e.g. "1:25:01.123", "+5.432",
+   * "+1:02.677"; cars that finished laps down have "+1 Lap", "+2 Laps". null for drivers who didn't
+   * finish, even when classified (see `status`).
+   * Practice: the driver's best lap, e.g. "1:47.070". Qualifying and sprint qualifying: the
+   * driver's lap from the last segment they reached (Q3, else Q2, else Q1), which isn't
+   * necessarily their best of the session.
+   */
   time: string | null;
+  /**
+   * Practice: gap to the fastest driver, e.g. "+0.145". Qualifying and sprint qualifying: gap to
+   * the fastest driver in the final segment (Q3, SQ3), only for drivers who set a time in it;
+   * drivers knocked out earlier have null. null for the leader, drivers without a time, and race
+   * and sprint results.
+   */
+  gap: string | null;
   points: number | null;
   status: string | null;
   grid: number | null;
 };
 
 export type RoundResults = {
-  race?: ResultEntry[];
+  fp1?: ResultEntry[];
+  fp2?: ResultEntry[];
+  fp3?: ResultEntry[];
+  sprintQualifying?: ResultEntry[];
   sprint?: ResultEntry[];
   qualifying?: ResultEntry[];
+  race?: ResultEntry[];
 };
 
 export type Season = {
   year: number;
-  /** Standings and results include rounds up to and including this one. */
+  /**
+   * Standings and race/sprint results include rounds up to and including this one.
+   * `results[asOfRound + 1]` may also hold that weekend's pre-race sessions (practice, sprint
+   * qualifying, qualifying).
+   */
   asOfRound: number;
   schedule: Round[];
   driverStandings: DriverStanding[];

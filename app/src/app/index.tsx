@@ -1,172 +1,21 @@
 import SettingsIcon from "@expo/material-symbols/settings.xml";
-import { Button as UIButton, Host, Switch } from "@expo/ui";
-import { Button as ComposeButton, Icon, IconButton, Text } from "@expo/ui/jetpack-compose";
-import { fillMaxWidth } from "@expo/ui/jetpack-compose/modifiers";
-import { Button as SwiftUIButton, Text as SwiftUIText } from "@expo/ui/swift-ui";
-import { buttonStyle, controlSize, frame, tint } from "@expo/ui/swift-ui/modifiers";
+import { Host, Switch } from "@expo/ui";
+import { Icon as ComposeIcon, IconButton } from "@expo/ui/jetpack-compose";
 import { router, useNavigation, type ExperimentalStackNavigationProp } from "expo-router";
-import { useLayoutEffect } from "react";
-import { Button, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { useLayoutEffect, useRef, useState, type ComponentRef } from "react";
+import { Button, ScrollView, StyleSheet, View } from "react-native";
 
-import { useLive, useSessionData } from "@/api/LiveSessionProvider";
-import type { Round, SeasonSession, SessionStatus, TrackStatus } from "@/api/protocol";
-import { formatSessionTime, nextRound, SESSION_LABELS } from "@/api/season";
-import type { LiveStatus } from "@/api/useLiveSession";
+import { useSessionData } from "@/api/LiveSessionProvider";
+import type { SeasonSession } from "@/api/protocol";
+import { nextRound, resolveSelection, type SessionSelection } from "@/api/season";
+import { LiveCard } from "@/components/LiveCard";
+import { ResultsCard } from "@/components/ResultsCard";
 import { toConstructorStandingEntries, toDriverStandingEntries } from "@/components/standings";
 import { StandingsCard } from "@/components/StandingsCard";
-import { AppText, Card, LiveBadge, SectionHeader, WeekendSchedule, type WeekendSession } from "@/components/ui";
+import { AppText } from "@/components/ui";
+import { WeekendCard } from "@/components/WeekendCard";
 import { usePreferences } from "@/preferences/PreferencesProvider";
-import { palette, spacing, useTheme } from "@/theme";
-
-const TRACK_STATUS: Record<TrackStatus, string | null> = {
-  green: null,
-  yellow: "Yellow flag",
-  sc: "Safety car",
-  vsc: "Virtual safety car",
-  vscEnding: "Virtual safety car ending",
-  red: "Red flag",
-};
-
-/** The session the server replays. Earlier sessions of the weekend are over. */
-const LIVE_SESSION_TYPE: SeasonSession["type"] = "Race";
-
-/**
- * The replayed session's row status. "live" only while the socket is open, so the schedule doesn't
- * say LIVE next to "Can't reach the server". "finished" is kept from the last known state even if the
- * socket has dropped since.
- */
-function liveSessionStatus(
-  socketStatus: LiveStatus,
-  sessionStatus: SessionStatus | undefined,
-): WeekendSession["status"] {
-  if (sessionStatus === "finished" || sessionStatus === "finalised") return "finished";
-  if (sessionStatus === "started" && socketStatus === "open") return "live";
-  return undefined;
-}
-
-/** The badge at the top of the live card: red only while the session runs. */
-function LiveCardBadge({ sessionStatus }: { sessionStatus: SessionStatus | undefined }) {
-  switch (sessionStatus) {
-    case "started":
-      return <LiveBadge label="LIVE NOW" />;
-    case "finished":
-    case "finalised":
-      return <LiveBadge label="FINISHED" tone="neutral" />;
-    case "inactive":
-      return <LiveBadge label="STARTING SOON" tone="neutral" />;
-    default:
-      return null;
-  }
-}
-
-/**
- * The live session card, or "Can't reach the server" when a fetch or the socket failed. A separate
- * component so only it re-renders on every live update, not the whole dashboard.
- */
-function LiveCard() {
-  const { scheme } = useTheme();
-  const { session, sessionError, seasonError, loading, reload } = useSessionData();
-  const { status, live, reconnect } = useLive();
-  const { showSpoilers } = usePreferences();
-  const fetchFailed = sessionError !== null || seasonError !== null;
-  const socketFailed = status === "closed" || status === "error";
-
-  const openLiveTiming = () => router.push("/live");
-  const retry = () => {
-    if (fetchFailed) reload();
-    if (status !== "open") reconnect();
-  };
-
-  if (fetchFailed || socketFailed) {
-    return (
-      <Card>
-        <View>
-          <AppText variant="title">{"Can't reach the server"}</AppText>
-          <AppText variant="callout" color="textSecondary">
-            Check your connection and try again.
-          </AppText>
-        </View>
-        <Host matchContents colorScheme={scheme}>
-          <UIButton label="Retry" variant="outlined" disabled={loading} onPress={retry} />
-        </Host>
-      </Card>
-    );
-  }
-
-  if (!session) return null;
-
-  // The track status gives away incidents, so it's a spoiler; the lap isn't.
-  const liveSummary = live
-    ? [
-        session.name,
-        `Lap ${live.state.lap} of ${live.state.totalLaps}`,
-        showSpoilers ? TRACK_STATUS[live.state.trackStatus] : null,
-      ]
-        .filter(Boolean)
-        .join(" · ")
-    : null;
-
-  return (
-    <Card>
-      <LiveCardBadge sessionStatus={live?.state.sessionStatus} />
-      <View>
-        <AppText variant="title">{session.meeting}</AppText>
-        {liveSummary ? (
-          <AppText variant="callout" color="textSecondary">
-            {liveSummary}
-          </AppText>
-        ) : null}
-      </View>
-      <Host matchContents={{ vertical: true }} colorScheme={scheme}>
-        {Platform.OS === "ios" ? (
-          <SwiftUIButton
-            onPress={openLiveTiming}
-            modifiers={[buttonStyle("borderedProminent"), controlSize("large"), tint(palette.brand)]}
-          >
-            <SwiftUIText modifiers={[frame({ maxWidth: Infinity })]}>Watch live timing</SwiftUIText>
-          </SwiftUIButton>
-        ) : (
-          <ComposeButton
-            onClick={openLiveTiming}
-            colors={{ containerColor: palette.brand, contentColor: palette.white }}
-            modifiers={[fillMaxWidth()]}
-          >
-            <Text>Watch live timing</Text>
-          </ComposeButton>
-        )}
-      </Host>
-    </Card>
-  );
-}
-
-/**
- * This weekend's sessions in the device's time zone. Sessions before the replayed one are finished;
- * the replayed one follows the live socket. A separate component, like `LiveCard`, because it reads
- * the live state.
- */
-function WeekendCard({ round }: { round: Round }) {
-  const { status, live } = useLive();
-  const liveStatus = liveSessionStatus(status, live?.state.sessionStatus);
-  const liveIndex = round.sessions.findIndex((session) => session.type === LIVE_SESSION_TYPE);
-
-  const sessions = round.sessions.map(
-    (session, index): WeekendSession => ({
-      key: session.type,
-      title: SESSION_LABELS[session.type],
-      subtitle: formatSessionTime(session.startUtc),
-      status: index < liveIndex ? "finished" : index === liveIndex ? liveStatus : undefined,
-    }),
-  );
-
-  return (
-    <View style={styles.section}>
-      <SectionHeader title="This weekend" accessory="Times in your time zone" />
-      <Card>
-        <WeekendSchedule sessions={sessions} />
-      </Card>
-    </View>
-  );
-}
+import { spacing, useTheme } from "@/theme";
 
 export default function Dashboard() {
   const { scheme, colors } = useTheme();
@@ -174,6 +23,24 @@ export default function Dashboard() {
   const { showSpoilers, setShowSpoilers, favouriteDriverCode } = usePreferences();
   const { season } = useSessionData();
   const round = season ? nextRound(season) : null;
+  const [selection, setSelection] = useState<SessionSelection | null>(null);
+  const resultsSelection = season ? resolveSelection(season, selection) : null;
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  const resultsY = useRef(0);
+  // iOS lays the content out under the header and insets it (`adjustedContentInset`, which React
+  // Native doesn't report), so offset 0 is behind the header. The first scroll event, sent when iOS
+  // applies the inset on mount, has the resting offset (e.g. -116). Only events the user didn't drive
+  // count (`responderIgnoreScroll`, set on iOS while no drag or fling is running), so a drag that wins
+  // the race can't be taken for it. Android has no inset: its offsets start at 0, so anything above 0
+  // (or no event at all) means 0.
+  const restOffset = useRef<number | null>(null);
+
+  // A schedule link selects its session in the Results card and scrolls the card into view.
+  const showResults = (session: SeasonSession["type"]) => {
+    if (!round) return;
+    setSelection({ round: round.round, session });
+    scroll.current?.scrollTo({ y: resultsY.current + (restOffset.current ?? 0) - spacing.lg, animated: true });
+  };
 
   const openSettings = () => router.push("/settings");
 
@@ -188,7 +55,7 @@ export default function Dashboard() {
   const SettingsButton = (
     <Host matchContents colorScheme={scheme}>
       <IconButton onClick={openSettings}>
-        <Icon source={SettingsIcon} contentDescription="Settings" />
+        <ComposeIcon source={SettingsIcon} contentDescription="Settings" />
       </IconButton>
     </Host>
   );
@@ -219,7 +86,14 @@ export default function Dashboard() {
   });
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
+    <ScrollView
+      ref={scroll}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={styles.content}
+      onScroll={({ nativeEvent }) => {
+        if (nativeEvent.responderIgnoreScroll === true) restOffset.current ??= Math.min(0, nativeEvent.contentOffset.y);
+      }}
+    >
       <View>
         <AppText variant="largeTitle" accessibilityRole="header">
           Race Weekend
@@ -231,9 +105,19 @@ export default function Dashboard() {
         ) : null}
       </View>
       <LiveCard />
-      {round ? <WeekendCard round={round} /> : null}
+      {round && season ? <WeekendCard round={round} season={season} onShowResults={showResults} /> : null}
       {season ? (
         <>
+          {resultsSelection ? (
+            <View onLayout={(event) => (resultsY.current = event.nativeEvent.layout.y)}>
+              <ResultsCard
+                season={season}
+                selection={resultsSelection}
+                onSelectionChange={setSelection}
+                favouriteCode={favouriteDriverCode ?? undefined}
+              />
+            </View>
+          ) : null}
           <StandingsCard
             title="Driver standings"
             entries={toDriverStandingEntries(season, colors.textTertiary)}
@@ -260,8 +144,5 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     gap: spacing.lg,
-  },
-  section: {
-    gap: spacing.sm,
   },
 });
