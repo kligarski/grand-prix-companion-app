@@ -43,6 +43,7 @@ export const Live: Story = {
     <View style={styles.column}>
       <LiveBadge />
       <LiveBadge label="LIVE NOW" />
+      <LiveBadge label="FINISHED" tone="neutral" />
     </View>
   ),
 };

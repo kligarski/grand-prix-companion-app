@@ -10,13 +10,9 @@ import { Button, Platform, ScrollView, StyleSheet, View } from "react-native";
 
 import { useLive, useSessionData } from "@/api/LiveSessionProvider";
 import type { Round, SeasonSession, SessionStatus, TrackStatus } from "@/api/protocol";
-import {
-  formatSessionTime,
-  nextRound,
-  SESSION_LABELS,
-  toConstructorStandingEntries,
-  toDriverStandingEntries,
-} from "@/api/season";
+import { formatSessionTime, nextRound, SESSION_LABELS } from "@/api/season";
+import type { LiveStatus } from "@/api/useLiveSession";
+import { toConstructorStandingEntries, toDriverStandingEntries } from "@/components/standings";
 import { StandingsCard } from "@/components/StandingsCard";
 import { AppText, Card, LiveBadge, SectionHeader, WeekendSchedule, type WeekendSession } from "@/components/ui";
 import { usePreferences } from "@/preferences/PreferencesProvider";
@@ -34,10 +30,33 @@ const TRACK_STATUS: Record<TrackStatus, string | null> = {
 /** The session the server replays. Earlier sessions of the weekend are over. */
 const LIVE_SESSION_TYPE: SeasonSession["type"] = "Race";
 
-function liveSessionStatus(status: SessionStatus | undefined): WeekendSession["status"] {
-  if (status === "started") return "live";
-  if (status === "finished" || status === "finalised") return "finished";
+/**
+ * The replayed session's row status. "live" only while the socket is open, so the schedule doesn't
+ * say LIVE next to "Can't reach the server". "finished" is kept from the last known state even if the
+ * socket has dropped since.
+ */
+function liveSessionStatus(
+  socketStatus: LiveStatus,
+  sessionStatus: SessionStatus | undefined,
+): WeekendSession["status"] {
+  if (sessionStatus === "finished" || sessionStatus === "finalised") return "finished";
+  if (sessionStatus === "started" && socketStatus === "open") return "live";
   return undefined;
+}
+
+/** The badge at the top of the live card: red only while the session runs. */
+function LiveCardBadge({ sessionStatus }: { sessionStatus: SessionStatus | undefined }) {
+  switch (sessionStatus) {
+    case "started":
+      return <LiveBadge label="LIVE NOW" />;
+    case "finished":
+    case "finalised":
+      return <LiveBadge label="FINISHED" tone="neutral" />;
+    case "inactive":
+      return <LiveBadge label="STARTING SOON" tone="neutral" />;
+    default:
+      return null;
+  }
 }
 
 /**
@@ -89,7 +108,7 @@ function LiveCard() {
 
   return (
     <Card>
-      <LiveBadge label="LIVE NOW" />
+      <LiveCardBadge sessionStatus={live?.state.sessionStatus} />
       <View>
         <AppText variant="title">{session.meeting}</AppText>
         {liveSummary ? (
@@ -126,8 +145,8 @@ function LiveCard() {
  * the live state.
  */
 function WeekendCard({ round }: { round: Round }) {
-  const { live } = useLive();
-  const liveStatus = liveSessionStatus(live?.state.sessionStatus);
+  const { status, live } = useLive();
+  const liveStatus = liveSessionStatus(status, live?.state.sessionStatus);
   const liveIndex = round.sessions.findIndex((session) => session.type === LIVE_SESSION_TYPE);
 
   const sessions = round.sessions.map(
